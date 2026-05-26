@@ -1,12 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { orders } from "@/src/data";
+import { orders as DEFAULT_ORDERS } from "@/src/data";
 import { motion } from "motion/react";
 import { Download, Printer } from "lucide-react";
 import { useState } from "react";
 import { PrintPreviewModal } from "./PrintPreviewModal";
 
-export function OrdersTable() {
+interface OrdersTableProps {
+  orders?: any[];
+}
+
+export function OrdersTable({ orders: propOrders }: OrdersTableProps) {
   const [printingOrder, setPrintingOrder] = useState<any>(null);
+  const displayOrders = propOrders || DEFAULT_ORDERS;
 
   return (
     <motion.div
@@ -40,7 +45,7 @@ export function OrdersTable() {
                 </tr>
               </thead>
               <tbody className="[&_tr:last-child]:border-0">
-                {orders.map((order, i) => (
+                {displayOrders.slice(0, 10).map((order, i) => (
                   <motion.tr
                     key={order.id}
                     initial={{ opacity: 0 }}
@@ -48,16 +53,20 @@ export function OrdersTable() {
                     transition={{ delay: 0.2 + i * 0.05 }}
                     className="border-b transition-colors hover:bg-gray-50"
                   >
-                    <td className="p-4 align-middle">{order.id}</td>
-                    <td className="p-4 align-middle">{order.customer}</td>
-                    <td className="p-4 align-middle">{order.amount}</td>
+                    <td className="p-4 align-middle font-mono text-xs font-bold text-[#0c443c]">{order.id}</td>
+                    <td className="p-4 align-middle font-semibold text-slate-700">{order.customer}</td>
+                    <td className="p-4 align-middle font-bold text-slate-800 font-mono">{order.amount}</td>
                     <td className="p-4 align-middle">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                        order.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
+                        order.status === 'Refunded' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                        'bg-amber-50 text-amber-700 border border-amber-100'
+                      }`}>
                         {order.status}
                       </span>
                     </td>
                     <td className="p-4 align-middle">
-                        <button onClick={() => setPrintingOrder(order)} className="p-2 text-gray-400 hover:text-emerald-700">
+                        <button onClick={() => setPrintingOrder(order)} className="p-2 text-gray-400 hover:text-emerald-70	 transition">
                            <Printer className="w-4 h-4" />
                         </button>
                     </td>

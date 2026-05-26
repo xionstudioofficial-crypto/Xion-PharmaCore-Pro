@@ -218,7 +218,11 @@ interface MobileViewProps {
   setIsPurchaseOpen: (open: boolean) => void;
   setIsScannerOpen: (open: boolean) => void;
   setIsExpiryOpen: (open: boolean) => void;
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
 }
+
+import { Sidebar } from "@/src/components/layout/Sidebar";
 
 export function MobileView({
   activeTab,
@@ -227,14 +231,23 @@ export function MobileView({
   setIsBulkOpen,
   setIsPurchaseOpen,
   setIsScannerOpen,
-  setIsExpiryOpen
+  setIsExpiryOpen,
+  isSidebarOpen,
+  toggleSidebar
 }: MobileViewProps) {
   return (
     <div className="md:hidden flex flex-col min-h-screen bg-[#F6FAF8] text-slate-800 pb-28">
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        onOpenSettings={onOpenSettings} 
+        isOpen={isSidebarOpen} 
+        onClose={toggleSidebar} 
+      />
       {/* 1. Brand/Header bar */}
       <header className="sticky top-0 bg-white border-b border-gray-100/80 px-4 py-3 flex items-center justify-between z-40 shadow-sm">
         <div className="flex items-center gap-3">
-          <button className="p-1 text-gray-600 hover:bg-gray-50 rounded-lg active:scale-95 transition-all">
+          <button onClick={toggleSidebar} className="p-1 text-gray-600 hover:bg-gray-50 rounded-lg active:scale-95 transition-all">
             <Menu className="w-6 h-6" />
           </button>
           

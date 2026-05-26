@@ -1,6 +1,6 @@
 {
   "name": "Xion PharmaCore Pro",
-  "description": "Pharmacy ERP SaaS dashboard platform.",
+  "description": "Pharmacy ERP SaaS enterprise platform with dedicated client tenant workspaces, customizable role-based permissions, offline-first SQLite buffers, and a robust master SaaS Super Admin console.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
