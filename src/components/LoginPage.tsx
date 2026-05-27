@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, UserRole } from '@/src/context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Building2, Mail, Lock, ShieldAlert, Key, ClipboardCheck, ArrowRight,
-  Sparkles, CheckCircle, DatabaseZap, Globe, ShieldCheck, Play, Radio, Calendar
+  Building2, Mail, Lock, Shield, Key, ClipboardCheck, ArrowRight,
+  Sparkles, Database, Globe, ShieldCheck, HelpCircle,
+  Grid, ChevronRight, Info, Eye, EyeOff, Check, Users, Cloud
 } from 'lucide-react';
 
 const TEAM_PRESETS = [
@@ -16,399 +17,539 @@ const TEAM_PRESETS = [
 ];
 
 export function LoginPage() {
-  const { tenants, signIn, signInWithGoogle } = useAuth();
+  const { tenants, signIn } = useAuth();
   
   const [selectedTenantId, setSelectedTenantId] = useState('tenant-apex');
   const [emailInput, setEmailInput] = useState('owner@apexpharma.com');
-  const [passwordInput, setPasswordInput] = useState('************');
+  const [passwordInput, setPasswordInput] = useState('••••••••••••');
   const [selectedRole, setSelectedRole] = useState<UserRole>('Owner/Admin');
   const [customName, setCustomName] = useState('Dr. Evelyn Harris');
-  const [activeTab, setActiveTab] = useState<'email' | 'google'>('email');
   
-  // Custom Google loader visual action
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showGoogleConsent, setShowGoogleConsent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
-  // Parse details of selected tenant
+  // Auto-fill values when selection changes to make interactive testing elegant
   const activeTenantObj = tenants.find(t => t.id === selectedTenantId) || tenants[0];
-
-  const handleRolePresetClick = (preset: typeof TEAM_PRESETS[0]) => {
-    setSelectedRole(preset.role);
-    setEmailInput(preset.email);
-    setCustomName(preset.name);
-    setPasswordInput('admin1234');
-  };
 
   const handleStandardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Replaces placeholder with fake clean password string if user didn't modify it
+    const finalPassword = passwordInput.includes('•') ? 'admin1234' : passwordInput;
     signIn(emailInput, selectedRole, selectedTenantId, customName);
   };
 
-  const handleGoogleSubmit = () => {
-    setIsGoogleLoading(true);
-    setTimeout(() => {
-      setShowGoogleConsent(true);
-    }, 1000);
-  };
-
-  const confirmGoogleOAuthScope = () => {
-    setShowGoogleConsent(false);
-    setIsGoogleLoading(false);
-    signInWithGoogle(selectedTenantId);
+  const handleTenantSelect = (tenantId: string) => {
+    setSelectedTenantId(tenantId);
+    
+    // Choose appropriate testing role preset matched to the selected tenant
+    if (tenantId === 'tenant-apex') {
+      setEmailInput('owner@apexpharma.com');
+      setPasswordInput('••••••••••••');
+      setSelectedRole('Owner/Admin');
+      setCustomName('Dr. Evelyn Harris');
+    } else if (tenantId === 'tenant-carefirst') {
+      setEmailInput('lead.pharmacist@apexpharma.com');
+      setPasswordInput('••••••••••••');
+      setSelectedRole('Pharmacist');
+      setCustomName('Marcus Chen, PharmD');
+    } else if (tenantId === 'tenant-greencross') {
+      setEmailInput('cashier.billing@apexpharma.com');
+      setPasswordInput('••••••••••••');
+      setSelectedRole('Salesman/Cashier');
+      setCustomName('Jordan Hayes');
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row relative overflow-hidden font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Decorative ambient background mesh */}
-      <div className="absolute inset-0 opacity-15 pointer-events-none select-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-600 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#000_1px,transparent_1px),linear-gradient(to_bottom,#000_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-25"></div>
+    <div className="min-h-screen bg-[#F1F5F9] flex flex-col items-center justify-between relative overflow-x-hidden font-sans select-none selection:bg-emerald-500 selection:text-white pb-6">
+      
+      {/* Decorative light ambient soft backdrops meshes */}
+      <div className="absolute inset-0 opacity-40 pointer-events-none select-none z-0">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-400 rounded-full mix-blend-multiply filter blur-[100px] opacity-15"></div>
+        <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-slate-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-20"></div>
+        
+        {/* Fine grid pattern for software engineering look */}
+        <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-35"></div>
       </div>
 
-      {/* Left Column: Sales/Banner pitch of the SaaS Platform */}
-      <div className="w-full md:w-5/12 p-8 md:p-16 flex flex-col justify-between text-white relative z-10 bg-gradient-to-br from-teal-950 to-emerald-950/80 border-b md:border-b-0 md:border-r border-teal-800/20">
-        
-        {/* Brand Headline */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="p-2.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/30">
-              <DatabaseZap className="w-6 h-6 text-emerald-400 animate-pulse" />
-            </span>
-            <div>
-              <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest text-[#A7D129]">PHARMASCRIPT CLOUD</span>
-              <h2 className="text-md font-black tracking-tight leading-none text-white">SaaS Client Portal</h2>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature pitch bento summary */}
-        <div className="my-10 space-y-6">
-          <h2 className="text-xl md:text-3xl font-black tracking-tight text-white leading-tight">
-            Integrated Pharmacy ERP SaaS Engine
-          </h2>
-          <p className="text-xs text-slate-300 leading-relaxed max-w-sm">
-            Welcome to the SaaS administration workspace client entry point. Log in to configure your dispensary branches, roles, permissions, and localized offline SQLite buffers.
-          </p>
-
-          <div className="space-y-4 pt-4 border-t border-teal-800/30">
-            <div className="flex gap-3 text-xs">
-              <span className="bg-emerald-500/15 p-2 rounded-xl text-emerald-400 font-bold shrink-0">1</span>
-              <div>
-                <p className="font-bold text-white">Multi-Pharmacy Client Tenant Isolation</p>
-                <p className="text-[11px] text-slate-400">Isolated dataspaces and branch configurations per client domain.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 text-xs">
-              <span className="bg-[#A7D129]/15 p-2 rounded-xl text-[#A7D129] font-bold shrink-0">2</span>
-              <div>
-                <p className="font-bold text-white">Advanced RBAC Permission Customizer</p>
-                <p className="text-[11px] text-slate-400">Dynamically restrict modules for Owners, Cashiers, Accountants or Pharmacists.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 text-xs">
-              <span className="bg-cyan-500/15 p-2 rounded-xl text-cyan-400 font-bold shrink-0">3</span>
-              <div>
-                <p className="font-bold text-white">SQLite To RDS Postgres Safe Replication</p>
-                <p className="text-[11px] text-slate-400">Zero database collisions during network downtime outages.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Meta details footer with Local State specs */}
-        <div className="pt-6 border-t border-teal-950 flex flex-wrap gap-x-6 gap-y-2 text-[10px] text-slate-400 font-mono font-bold">
-          <span className="flex items-center gap-1">
-            <Radio className="w-3 h-3 text-emerald-400 animate-ping" /> Connection State: TLS Live
-          </span>
-          <span>© 2026 Pharmacloud SaaS Platform</span>
+      {/* Floating Top-Right Language Dropdown Selector */}
+      <div className="absolute top-6 right-8 z-20">
+        <div 
+          onClick={() => alert("Language selection localized profiles are available in Pro plan branches.")}
+          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl font-bold text-xs text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer select-none active:scale-95"
+        >
+          <Globe className="w-4 h-4 text-slate-500" />
+          <span>English</span>
+          <span className="text-[10px] text-slate-400">▼</span>
         </div>
       </div>
 
-      {/* Right Column: Interactive Login Core */}
-      <div className="w-full md:w-7/12 p-6 md:p-12 lg:p-16 flex flex-col justify-center relative z-10 overflow-y-auto">
+      {/* MAIN CONTAINER FRAME */}
+      <div className="w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-12 lg:pt-0 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
         
-        <div className="max-w-xl mx-auto w-full space-y-6">
+        {/* LEFT COLUMN: Logo header, pitches, and custom CSS PC render */}
+        <div className="lg:col-span-5 space-y-8 flex flex-col justify-center py-6">
           
-          <div className="space-y-1">
-            <h2 className="text-xl font-black text-white tracking-tight">Access Your Pharmacy ERP</h2>
-            <p className="text-xs text-slate-400">Select your pharmacy tenant client below to demonstrate SaaS multi-access.</p>
-          </div>
+          {/* Logo Heading container */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3.5">
+              {/* Rounded hexagon styled green logo */}
+              <div id="saas-logo-icon" className="w-13 h-13 bg-gradient-to-br from-[#00703C] to-[#01522d] rounded-2xl flex items-center justify-center font-black text-white text-3xl shadow-lg border border-emerald-600/20 active:scale-95 transition-transform duration-200">
+                P
+              </div>
+              <div>
+                <h1 className="text-xl font-extrabold text-slate-905 tracking-tight uppercase leading-tight">SaaS Client Portal</h1>
+                <p className="text-[11px] font-bold text-slate-405 tracking-wide uppercase">Pharmacy ERP Platform</p>
+              </div>
+            </div>
 
-          {/* SaaS Client Selector */}
-          <div className="space-y-2.5">
-            <label className="text-[10px] font-extrabold uppercase tracking-widest text-[#A7D129] flex items-center justify-between">
-              <span>Choose Pharmacy Client Tenant</span>
-              <span className="bg-[#A7D129]/10 text-[#A7D129] px-2 py-0.5 rounded-full text-[8.5px]">ISOLATED SAAS DOMAIN</span>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {tenants.map((ten) => (
-                <button
-                  key={ten.id}
-                  type="button"
-                  onClick={() => setSelectedTenantId(ten.id)}
-                  className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition relative cursor-pointer ${
-                    selectedTenantId === ten.id 
-                      ? 'bg-slate-900 border-teal-500 text-white shadow-lg' 
-                      : 'bg-slate-950/40 border-slate-800 text-slate-300 hover:border-slate-700'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Building2 className={`w-3.5 h-3.5 ${selectedTenantId === ten.id ? 'text-emerald-400' : 'text-slate-500'}`} />
-                      <span className="font-extrabold text-[11px] line-clamp-1">{ten.name}</span>
-                    </div>
-                    <span className="font-mono text-[9px] text-slate-500">{ten.domain}</span>
-                  </div>
-
-                  <div className="mt-3 pt-2 border-t border-slate-800/55 flex justify-between items-center text-[9px] font-bold">
-                    <span className={`px-1.5 py-0.5 rounded ${
-                      ten.plan === 'Enterprise SaaS' ? 'bg-emerald-500/10 text-emerald-400' :
-                      ten.plan === 'Premium Pro' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-amber-500/10 text-amber-400'
-                    }`}>
-                      {ten.plan}
-                    </span>
-                    {ten.isExpired ? (
-                      <span className="text-rose-500">EXPIRED</span>
-                    ) : (
-                      <span className="text-emerald-500">ACTIVE</span>
-                    )}
-                  </div>
-                </button>
-              ))}
+            {/* Custom green-tinted bullet badge capsule */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-[#00703C] rounded-full text-xs font-bold w-fit">
+              <span className="w-4 h-4 bg-[#00703C] hover:scale-105 transition rounded-full flex items-center justify-center text-white text-[10px]">✔</span>
+              <span>Multi-Tenant • Secure • Scalable</span>
             </div>
           </div>
 
-          {/* Form tab logins */}
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800/80 shadow-2xl space-y-6">
+          {/* Slogan with precise spacing highlighted with green */}
+          <div className="space-y-3">
+            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 leading-tight tracking-tight">
+              Integrated Pharmacy <br />
+              <span className="text-[#00703C]">ERP SaaS</span> Engine
+            </h2>
+            <div className="w-14 h-1 bg-[#00703C] rounded-full mt-3" />
+            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-md pt-1.5">
+              Access your pharmacy system securely. Manage your branches, users, roles, inventory and much more in one powerful platform.
+            </p>
+          </div>
+
+          {/* Bullet cards features with green circular icons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md lg:max-w-none">
             
-            <div className="flex border-b border-slate-800 pb-3 gap-4">
-              <button 
-                onClick={() => setActiveTab('email')}
-                className={`pb-2 text-xs font-bold transition relative cursor-pointer ${
-                  activeTab === 'email' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                Email/Password Login
-                {activeTab === 'email' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500"></span>}
-              </button>
-              <button 
-                onClick={() => setActiveTab('google')}
-                className={`pb-2 text-xs font-bold transition relative cursor-pointer ${
-                  activeTab === 'google' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                Gmail Google Sign-In
-                {activeTab === 'google' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#A7D129]"></span>}
-              </button>
+            {/* Feature 1 */}
+            <div className="flex gap-3.5 p-4 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-xs">
+              <span className="bg-emerald-50 text-[#00703C] w-9 h-9 flex items-center justify-center rounded-xl text-emerald-600 shrink-0 border border-emerald-100/30">
+                <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
+               </span>
+              <div>
+                <p className="font-extrabold text-slate-800 text-xs">Multi-Tenant Isolation</p>
+                <p className="text-[10.5px] text-slate-450 mt-0.5 leading-normal">Each pharmacy data is completely isolated and secure.</p>
+              </div>
             </div>
 
-            {/* TAB 1: EMAIL & PASSWORD ACCESS WITH QUICK ROLE INJECTORS */}
-            {activeTab === 'email' && (
-              <form onSubmit={handleStandardSubmit} className="space-y-4">
-                
-                {/* Role testing fast-injector section */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      ERP Tester Account Credentials Toggles
-                    </label>
-                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-mono">
-                      CLICK TO TRIGGER CREDENTIALS
-                    </span>
-                  </div>
+            {/* Feature 2 */}
+            <div className="flex gap-3.5 p-4 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-xs">
+              <span className="bg-emerald-50 text-[#00703C] w-9 h-9 flex items-center justify-center rounded-xl text-emerald-600 shrink-0 border border-emerald-100/30">
+                <Users className="w-5 h-5 stroke-[2.2]" />
+               </span>
+              <div>
+                <p className="font-extrabold text-slate-800 text-xs">Advanced RBAC Security</p>
+                <p className="text-[10.5px] text-slate-455 mt-0.5 leading-normal">Role-based access with advanced permissions.</p>
+              </div>
+            </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {TEAM_PRESETS.map((preset) => (
+            {/* Feature 3 */}
+            <div className="flex gap-3.5 p-4 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-xs">
+              <span className="bg-emerald-50 text-[#00703C] w-9 h-9 flex items-center justify-center rounded-xl text-emerald-600 shrink-0 border border-emerald-100/30">
+                <Database className="w-5 h-5 stroke-[2.2]" />
+               </span>
+              <div>
+                <p className="font-extrabold text-slate-800 text-xs">High Performance</p>
+                <p className="text-[10.5px] text-slate-450 mt-0.5 leading-normal">Optimized PostgreSQL with safe replication.</p>
+              </div>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="flex gap-3.5 p-4 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] backdrop-blur-xs">
+              <span className="bg-emerald-50 text-[#00703C] w-9 h-9 flex items-center justify-center rounded-xl text-emerald-600 shrink-0 border border-emerald-100/30">
+                <Cloud className="w-5 h-5 stroke-[2.2]" />
+               </span>
+              <div>
+                <p className="font-extrabold text-slate-800 text-xs">99.9% Uptime</p>
+                <p className="text-[10.5px] text-slate-450 mt-0.5 leading-normal">Enterprise-grade reliability and performance.</p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* COMPUTER ILLUSTRATION CONTAINER WITH 3D PILL JAR OVERLAP */}
+          <div className="relative mt-4 max-w-sm mx-auto hidden lg:block select-none pointer-events-none">
+            <div className="bg-slate-705 p-3 rounded-2xl shadow-xl border border-slate-201 shadow-slate-300 aspect-video relative overflow-hidden bg-slate-800">
+              
+              {/* Internal Monitor Screen */}
+              <div className="bg-slate-50 w-full h-full rounded-lg overflow-hidden border border-slate-200 flex flex-col p-2.5 text-slate-800">
+                
+                {/* Header elements inside screen */}
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-rose-400" />
+                    <div className="w-2 h-2 rounded-full bg-amber-400" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="text-[8px] font-mono font-black text-slate-400 ml-1">pharmscript_workspace</span>
+                  </div>
+                  <div className="h-2.5 w-16 bg-slate-200 rounded-full" />
+                </div>
+                
+                {/* Graphic layout elements representing the Admin Dashboard */}
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  <div className="col-span-1 border border-slate-100 bg-white p-1 rounded-md space-y-1.5 h-20">
+                    <div className="h-1.5 w-full bg-[#00703C]/30 rounded-full" />
+                    <div className="h-1 w-4/5 bg-gray-100 rounded-full" />
+                    <div className="h-1 w-3/5 bg-gray-100 rounded-full" />
+                  </div>
+                  <div className="col-span-3 bg-white border border-slate-100 p-2 rounded-md flex flex-col justify-between h-20">
+                    <div className="flex justify-between items-center">
+                      <div className="h-1.5 w-1/3 bg-gray-300 rounded-full" />
+                      <div className="h-1.5 w-1/4 bg-[#00703C]/20 rounded-full" />
+                    </div>
+                    {/* Tiny simulated bar chart */}
+                    <div className="flex items-end gap-1.5 justify-between h-8 pt-1.5 border-b border-slate-100 pb-0.5">
+                      <div className="h-4/5 w-2 bg-[#00703C] rounded-t-xs" />
+                      <div className="h-2/3 w-2 bg-[#00703C]/70 rounded-t-xs" />
+                      <div className="h-5/6 w-2 bg-emerald-500 rounded-t-xs" />
+                      <div className="h-1/2 w-2 bg-gray-200 rounded-t-xs" />
+                      <div className="h-3/4 w-2 bg-[#00703C]/80 rounded-t-xs" />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            
+            {/* Monitor neck stand */}
+            <div className="w-16 h-8 bg-slate-305 mx-auto rounded-b border-x border-slate-400 bg-slate-300" />
+            <div className="w-28 h-2 bg-slate-404 mx-auto rounded-full bg-slate-400" />
+            
+            {/* Prescription Pill Jar overlapping in front of the Monitor */}
+            <div className="absolute -left-6 -bottom-6 w-22 p-2 bg-white rounded-3xl shadow-[0_12px_24px_rgba(0,0,0,0.1)] border border-gray-150 flex flex-col items-center">
+              
+              {/* Cap cover container */}
+              <div className="w-14 h-5 bg-gradient-to-r from-gray-200 to-gray-100 rounded-t-md relative border-b border-gray-300 shadow-xs">
+                {/* Cap groove indicators */}
+                <div className="absolute inset-x-1.5 inset-y-1 bg-gray-200/50 [background-image:linear-gradient(to_right,rgba(0,0,0,0.12)_1px,transparent_1px)] [background-size:3px_100%]" />
+              </div>
+
+              {/* Main bottle shape */}
+              <div className="w-16 h-16 bg-white border border-gray-100 rounded-xl relative flex flex-col items-center justify-end pb-1.5 overflow-hidden shadow-xs">
+                {/* Security seal thread label */}
+                <div className="w-15 h-1 bg-gray-100 border-b border-gray-150" />
+                
+                {/* Dynamic solid green pharmaceutical label with medical cross */}
+                <div className="w-full bg-[#00703C] py-2.5 flex items-center justify-center my-auto">
+                  <div className="relative">
+                    <div className="w-4.5 h-1.5 bg-white rounded-sm animate-pulse" />
+                    <div className="h-4.5 w-1.5 bg-white rounded-sm absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+                
+                {/* Bottom detail pill indicators labels */}
+                <div className="flex gap-1 mt-1">
+                  <div className="w-4 h-1 bg-amber-400 rounded-xs" />
+                  <div className="w-6 h-1 bg-[#00703C]/30 rounded-xs" />
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN: Interactive High-Contrast Card */}
+        <div className="lg:col-span-7 flex justify-center items-center py-6">
+          
+          {/* Main Select Card Wrapper */}
+          <div className="bg-white p-8 rounded-[32px] border border-gray-150 shadow-[0_16px_40px_rgba(15,23,42,0.06)] max-w-xl w-full space-y-6 relative">
+            
+            {/* Header Padlock block */}
+            <div className="text-center space-y-2">
+              <div className="p-3 bg-emerald-50 border border-emerald-100 text-[#00703C] rounded-2xl w-fit mx-auto shadow-xs flex items-center justify-center transition hover:rotate-6 duration-300">
+                <Shield className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Access Your Pharmacy ERP</h3>
+              <p className="text-xs text-slate-500 font-medium">Select your pharmacy tenant and sign in to continue</p>
+            </div>
+
+            {/* Select Pharmacy tenant header */}
+            <div className="space-y-3.5">
+              
+              <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <ClipboardCheck className="w-4 h-4 text-slate-400" />
+                  Select Pharmacy Tenant
+                </span>
+                <button 
+                  type="button" 
+                  onClick={() => alert("Demonstration mode: select from the available branches below.")} 
+                  className="text-xs font-bold text-[#00703C] hover:text-[#00522d] flex items-center gap-1 cursor-pointer transition select-none hover:underline"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  View All
+                </button>
+              </div>
+
+              {/* Horizontal sliding list layout */}
+              <div className="relative">
+                
+                <div className="grid grid-cols-3 gap-3 overflow-hidden">
+                  {tenants.map((ten) => {
+                    const isSelected = selectedTenantId === ten.id;
+                    
+                    let badgeBg = "bg-emerald-50 text-[#00703C] border-emerald-100";
+                    let badgeText = "Professional Plan";
+                    let cardTitle = ten.name;
+                    let cardDomain = ten.domain;
+
+                    if (ten.id === 'tenant-apex') {
+                      badgeBg = "bg-emerald-500/10 text-[#00703C] border border-[#00703C]/20";
+                      badgeText = "Professional Plan";
+                      cardTitle = "Apex Global Pharmacy";
+                      cardDomain = "apex.pharmacy.com";
+                    } else if (ten.id === 'tenant-carefirst') {
+                      badgeBg = "bg-orange-500/10 text-orange-600 border border-orange-500/20";
+                      badgeText = "Starter Plan";
+                      cardTitle = "CareFirst Dispensary";
+                      cardDomain = "carefirst.pharmacy.com";
+                    } else if (ten.id === 'tenant-greencross') {
+                      badgeBg = "bg-rose-500/10 text-rose-605 text-rose-600 border border-rose-500/20";
+                      badgeText = "Expired";
+                      cardTitle = "GreenCross Medicare";
+                      cardDomain = "greencross.pharmacy.com";
+                    }
+
+                    return (
                       <button
-                        key={preset.role}
+                        key={ten.id}
                         type="button"
-                        onClick={() => handleRolePresetClick(preset)}
-                        className={`px-3 py-1.5 text-[10px] font-medium rounded-xl transition cursor-pointer border ${
-                          selectedRole === preset.role 
-                            ? 'bg-emerald-500/10 border-emerald-500 text-white font-bold' 
-                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200'
+                        onClick={() => handleTenantSelect(ten.id)}
+                        className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between h-34 transition-all duration-300 relative cursor-pointer ${
+                          isSelected 
+                            ? 'bg-emerald-500/[0.02] border-[#00703C] border-2 shadow-xs' 
+                            : 'bg-white border-gray-200 text-slate-800 hover:bg-slate-50 hover:border-gray-300'
                         }`}
                       >
-                        {preset.role} ({preset.name.split(' ')[0]})
+                        {/* Selected overlay indicator badge */}
+                        {isSelected && (
+                          <span className="absolute top-2.5 right-2.5 w-4.5 h-4.5 bg-[#00703C] text-white rounded-full flex items-center justify-center shadow-md scale-100 animate-scaleIn">
+                            <Check className="w-3 h-3 stroke-[3.5]" />
+                          </span>
+                        )}
+
+                        {/* Top Micro logo placeholder depending on ID */}
+                        <div className="w-full">
+                          
+                          {/* Top custom mini icons */}
+                          <div className="mb-2.5">
+                            {ten.id === 'tenant-apex' && (
+                              <div className="font-extrabold text-[#00703C] tracking-tight leading-none text-[10.5px] uppercase">
+                                APEX
+                              </div>
+                            )}
+                            {ten.id === 'tenant-carefirst' && (
+                              <div className="flex items-center gap-1 text-[10.5px] font-black text-indigo-900">
+                                <span className="w-4 h-4 bg-indigo-950 text-white rounded-md flex items-center justify-center text-[7.5px] font-extrabold">CG</span>
+                              </div>
+                            )}
+                            {ten.id === 'tenant-greencross' && (
+                              <div className="text-[10px] text-emerald-700 font-extrabold flex items-center gap-0.5 leading-none">
+                                <span className="text-[11px] leading-none">➕</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="font-bold text-[11px] text-slate-800 leading-tight line-clamp-1">{cardTitle}</p>
+                          <p className="font-mono text-[8.5px] text-slate-400 mt-0.5 truncate">{cardDomain}</p>
+                        </div>
+
+                        {/* Plan Indicator Pill Capsule */}
+                        <div className="w-full mt-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold tracking-tight inline-block ${badgeBg}`}>
+                            {badgeText}
+                          </span>
+                        </div>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Email */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
-                      <input 
-                        type="email" 
-                        required
-                        value={emailInput}
-                        onChange={e => setEmailInput(e.target.value)}
-                        placeholder="e.g. owner@apexpharma.com" 
-                        className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-emerald-500 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secret Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
-                      <input 
-                        type="password" 
-                        required
-                        value={passwordInput}
-                        onChange={e => setPasswordInput(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-emerald-500 font-medium"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Display role state to inject */}
-                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-950/40 border border-slate-800/80 rounded-2xl text-[10.5px]">
-                  <div>
-                    <span className="text-slate-500 block">Logging in as:</span>
-                    <span className="font-extrabold text-white">{customName}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block">RBAC Session Role:</span>
-                    <span className="font-extrabold text-[#A7D129]">{selectedRole}</span>
-                  </div>
-                </div>
-
-                <div className="pt-2">
+                {/* Left/Right navigation slider controls mockup override icon */}
+                <div className="absolute top-1/2 -right-3.5 -translate-y-1/2 z-10">
                   <button 
-                    type="submit"
-                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider py-4 rounded-2xl transition cursor-pointer shadow-lg shadow-emerald-950/50"
+                    type="button" 
+                    title="Slide next pharmacy client"
+                    className="w-8 h-8 rounded-full bg-white text-slate-700 shadow-md border border-gray-150 flex items-center justify-center cursor-pointer hover:bg-slate-50 active:scale-95 transition shrink-0"
+                    onClick={() => {
+                      setSelectedTenantId(prev => prev === 'tenant-apex' ? 'tenant-carefirst' : prev === 'tenant-carefirst' ? 'tenant-greencross' : 'tenant-apex');
+                    }}
                   >
-                    <span>Authenticate JWT Login</span>
-                    <ArrowRight className="w-4 h-4 text-[#A7D129]" />
+                    <ChevronRight className="w-4.5 h-4.5 text-slate-500" />
                   </button>
                 </div>
 
-              </form>
-            )}
+              </div>
 
-            {/* TAB 2: GMAIL / GOOGLE OAUTH FLOW */}
-            {activeTab === 'google' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-slate-950/35 border border-slate-800 rounded-2xl text-xs text-slate-400 space-y-2 leading-relaxed">
-                  <p className="font-extrabold text-white">Gmail Google OAuth Gateway</p>
-                  <p>
-                    By proceeding, the systems logs you into your unified Google Workspace. This utilizes verified Google federated security parameters mapping directly to your account roles.
-                  </p>
+              {/* Dynamic ERP test testing presets panel (Subtle, custom feature for testing!) */}
+              <div className="py-2.5 px-3.5 bg-slate-50 border border-slate-100 rounded-2xl flex flex-wrap items-center justify-between gap-1.5 text-xs font-semibold text-slate-600 mt-1">
+                <span className="font-mono text-[9px] text-emerald-800 font-bold uppercase tracking-wider">Test Role preset:</span>
+                <div className="flex gap-1 flex-wrap">
+                  {TEAM_PRESETS.filter(p => p.role !== 'SaaS Super Admin').map((preset) => (
+                    <button
+                      key={preset.role}
+                      type="button"
+                      onClick={() => {
+                        setEmailInput(preset.email);
+                        setSelectedRole(preset.role);
+                        setCustomName(preset.name);
+                        setPasswordInput('••••••••••••');
+                        if (preset.role === 'Pharmacist') {
+                          setSelectedTenantId('tenant-carefirst');
+                        } else if (preset.role === 'Salesman/Cashier') {
+                          setSelectedTenantId('tenant-greencross');
+                        } else {
+                          setSelectedTenantId('tenant-apex');
+                        }
+                      }}
+                      className={`px-2.5 py-0.5 rounded-lg text-[9px] font-mono border font-extrabold transition cursor-pointer ${
+                        selectedRole === preset.role 
+                          ? 'bg-[#00703C] text-white border-[#00703C]' 
+                          : 'bg-white border-gray-200 text-slate-400 hover:text-slate-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {preset.role.replace('Salesman/', '').replace('/Admin', '')}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                <button 
-                  type="button"
-                  onClick={handleGoogleSubmit}
-                  disabled={isGoogleLoading}
-                  className="w-full flex items-center justify-center gap-3 bg-slate-100 hover:bg-white text-slate-900 font-extrabold text-xs py-4 rounded-2xl transition cursor-pointer"
+            </div>
+
+            {/* or continue with login separator lines */}
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-[1px] bg-gray-100 flex-1" />
+              <span className="text-[10px] text-slate-400 font-bold tracking-tight uppercase">or continue with login</span>
+              <div className="h-[1px] bg-gray-100 flex-1" />
+            </div>
+
+            {/* Standard authentication fields */}
+            <form onSubmit={handleStandardSubmit} className="space-y-4">
+              
+              {/* Username/Email Input grouping */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-600">Email / Username</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-3.5 text-slate-400">
+                    <Mail className="w-4 h-4 text-slate-350" />
+                  </span>
+                  <input 
+                    type="email"
+                    required
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    className="w-full bg-white pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-xs text-slate-800 outline-none focus:border-[#00703C] focus:shadow-[0_0_8px_rgba(0,112,60,0.12)] font-bold transition-all duration-200"
+                    placeholder="e.g., owner@apexpharms.com"
+                  />
+                </div>
+              </div>
+
+              {/* Password input grouping */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-[11px] font-bold text-slate-600">Password</label>
+                  <button 
+                    type="button" 
+                    onClick={() => alert("Simulated: Forgot password flow has initiated, password token was sent directly to this tenant's operator inbox.")}
+                    className="text-[11px] font-bold text-[#00703C] hover:text-[#005e32] transition hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-3.5 text-slate-400">
+                    <Lock className="w-4 h-4 text-slate-350" />
+                  </span>
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full bg-white pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-xs text-slate-800 outline-none focus:border-[#00703C] focus:shadow-[0_0_8px_rgba(0,112,60,0.12)] font-bold transition-all duration-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4 text-slate-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember me select checkbox section */}
+              <div className="flex items-center justify-between pt-1 select-none text-xs text-slate-500 font-semibold">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 accent-[#00703C] border-gray-300 rounded text-[#00703C] focus:ring-emerald-550 cursor-pointer"
+                  />
+                  <span>Remember me</span>
+                </label>
+                <div className="flex items-center gap-1 cursor-help hover:text-slate-705 transition group relative">
+                  <span>Keep me signed in</span>
+                  <span className="bg-slate-100 hover:bg-slate-200 text-slate-500 p-0.5 rounded-full inline-block">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                  {/* Subtle tooltip help hover */}
+                  <div className="absolute bottom-full right-0 bg-slate-900 text-white text-[10px] p-2 rounded-xl border border-slate-700 w-44 shadow-lg scale-0 group-hover:scale-100 transition-all origin-bottom-right duration-200 translate-y-[-6px] pointer-events-none z-30 font-medium">
+                    Keeps your JWT cryptographic active session stored securely in client storage buffers.
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Submit action in dark green color #00703C exactly matching */}
+              <div className="pt-3">
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-between bg-[#00703C] hover:bg-[#005e2d] text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-md hover:scale-[1.01] active:scale-[0.99] border border-emerald-700/20 shadow-emerald-700/10 cursor-pointer"
                 >
-                  {isGoogleLoading ? (
-                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-900 border-t-transparent"></span>
-                  ) : (
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61a5.66 5.66 0 0 1-2.45 3.71v3.08h3.95c2.31-2.13 3.635-5.26 3.635-8.64z"/>
-                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.95-3.08c-1.1.74-2.51 1.18-3.98 1.18-3.06 0-5.65-2.07-6.57-4.86H1.54v3.19A11.98 11.98 0 0 0 12 24z"/>
-                      <path fill="#FBBC05" d="M5.43 14.33a7.19 7.19 0 0 1 0-4.66V6.48H1.54a11.98 11.98 0 0 0 0 11.04l3.89-3.19z"/>
-                      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.93 1.19 15.24 0 12 0 7.3 0 3.25 2.69 1.54 6.48l3.89 3.19c.92-2.79 3.51-4.92 6.57-4.92z"/>
-                    </svg>
-                  )}
-                  <span>Sign In with Gmail Authorized Google ID</span>
+                  <span className="flex items-center gap-2">
+                    <Lock className="w-4.5 h-4.5 text-emerald-200 shrink-0" />
+                    Sign In to Pharmacy ERP
+                  </span>
+                  <ArrowRight className="w-4.5 h-4.5 text-white stroke-[2.5]" />
                 </button>
               </div>
-            )}
 
-          </div>
+            </form>
 
-          {/* Real-time crypt JWT inspection console */}
-          <div className="p-4 bg-slate-900 border border-slate-800/80 rounded-2xl space-y-2 text-xs">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-emerald-400" /> Web JWT Cryptographic Spec Inspector
-            </span>
-            <p className="text-[10px] text-slate-500">
-              The platform generates authenticated, digitally signed JSON Web Tokens (JWT) mapped directly to your pharmacy tenant. Click the role buttons above to see the token change.
-            </p>
-            <div className="bg-slate-950 p-3 rounded-xl font-mono text-[9px] text-emerald-300 overflow-x-auto whitespace-pre leading-normal border border-slate-900">
-              {`HEADER: {"alg":"HS256","typ":"JWT"}\nPAYLOAD: {"sub":"${emailInput}","role":"${selectedRole}","tenant":"${selectedTenantId}","iss":"pharmascript-saas","exp":1779774571}\nSIGNATURE: [SHA256 HMAC Encrypted Verify Security Status Checked Live]`}
+            {/* Secure connection light-green pill alert badge */}
+            <div className="flex items-center justify-center gap-2 py-3 px-4 bg-emerald-500/[0.06] border border-emerald-500/15 rounded-2xl text-[10.5px] text-[#00703C] font-semibold tracking-wide">
+              <span className="text-[11.5px] leading-none shrink-0">🛡️</span>
+              <span>Secure connection • Your data is protected with enterprise-grade security</span>
             </div>
+
           </div>
 
         </div>
 
       </div>
 
-      {/* Gmail Consent Form Modal Overlay */}
-      <AnimatePresence>
-        {showGoogleConsent && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-xs font-sans"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-white rounded-3xl p-8 max-w-sm w-full text-slate-800 shadow-2xl space-y-5 border border-slate-200"
-            >
-              <div className="flex justify-center">
-                <div className="bg-indigo-50 p-4 rounded-full border border-indigo-100">
-                  <svg className="w-8 h-8" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61a5.66 5.66 0 0 1-2.45 3.71v3.08h3.95c2.31-2.13 3.635-5.26 3.635-8.64z"/>
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.95-3.08c-1.1.74-2.51 1.18-3.98 1.18-3.06 0-5.65-2.07-6.57-4.86H1.54v3.19A11.98 11.98 0 0 0 12 24z"/>
-                    <path fill="#FBBC05" d="M5.43 14.33a7.19 7.19 0 0 1 0-4.66V6.48H1.54a11.98 11.98 0 0 0 0 11.04l3.89-3.19z"/>
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.93 1.19 15.24 0 12 0 7.3 0 3.25 2.69 1.54 6.48l3.89 3.19c.92-2.79 3.51-4.92 6.57-4.92z"/>
-                  </svg>
-                </div>
-              </div>
+      {/* FOOTER COPYRIGHT AT BOTTOM OF COMPLETE PAGE */}
+      <div className="w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-8 mt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 font-bold text-slate-400 text-xs relative z-10 select-none pointer-events-none">
+        
+        <div className="flex items-center gap-1 font-semibold">
+          <span>© 2025 SaaS Client Portal. All rights reserved.</span>
+        </div>
 
-              <div className="text-center space-y-1">
-                <h3 className="font-extrabold text-lg text-slate-900">Sign in with Google</h3>
-                <p className="text-xs text-slate-400">Choose your Google account to authorize access to Pharmacy Cloud ERP</p>
-              </div>
+        <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-500/5 border border-emerald-550/15 px-3 py-1 rounded-full font-mono text-[10.5px] font-black shrink-0 shadow-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
+          <span>Active SSL: AES_256</span>
+          <span className="text-slate-300">|</span>
+          <span>Version 2.0.0</span>
+        </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                  X
-                </div>
-                <div>
-                  <span className="font-extrabold text-[11px] block text-slate-800">xionstudio.official@gmail.com</span>
-                  <span className="text-[10px] text-slate-400 font-medium">Google Account Owner</span>
-                </div>
-              </div>
+      </div>
 
-              <div className="text-[10px] text-slate-400 text-center leading-relaxed">
-                By selecting "Approve Consent Scope", you agree to share your email, name, profile photo, and security roles mapping with the SaaS portal instance <code>{activeTenantObj.domain}</code>.
-              </div>
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setShowGoogleConsent(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Decline
-                </button>
-                <button 
-                  onClick={confirmGoogleOAuthScope}
-                  className="flex-1 bg-[#09352F] hover:bg-[#11574d] text-white py-3 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Approve Consent Scope
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

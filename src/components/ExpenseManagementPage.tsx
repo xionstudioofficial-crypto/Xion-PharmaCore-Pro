@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useCurrency } from "@/src/hooks/useCurrency";
 import { 
   Plus, Search, Calendar, DollarSign, UploadCloud, FileText, 
   TrendingUp, Activity, Briefcase, Lightbulb, Home, Trash2, 
@@ -25,6 +26,7 @@ interface Expense {
 const COLORS = ["#047857", "#0284c7", "#f59e0b", "#ec4899", "#8b5cf6", "#10b981", "#64748b"];
 
 export function ExpenseManagementPage() {
+  const { formatCurrency, symbol } = useCurrency();
   // Initial pre-populated expenses database for pharmacy operations
   const [expenses, setExpenses] = useState<Expense[]>([
     {
@@ -338,7 +340,7 @@ export function ExpenseManagementPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Monthly Expenses</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">${totalExpenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits:2})}</h3>
+            <h3 className="text-2xl font-black text-slate-900 mt-1">{formatCurrency(totalExpenses)}</h3>
             <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
               <Sparkles className="w-3 h-3 text-emerald-500" />
               <span>Includes lease, salaries & general tax</span>
@@ -356,7 +358,7 @@ export function ExpenseManagementPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Salary Payroll</p>
-            <h3 className="text-2xl font-black text-emerald-850 mt-1">${salariesTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
+            <h3 className="text-2xl font-black text-emerald-850 mt-1">{formatCurrency(salariesTotal)}</h3>
             <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium mt-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
               <span>Full payout completed</span>
@@ -374,7 +376,7 @@ export function ExpenseManagementPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Utilities Overhead</p>
-            <h3 className="text-2xl font-black text-gray-800 mt-1">${utilitiesTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
+            <h3 className="text-2xl font-black text-gray-800 mt-1">{formatCurrency(utilitiesTotal)}</h3>
             <div className="flex items-center gap-1 text-[11px] text-amber-600 font-medium mt-1">
               <span>Energy, cool storages & broadband</span>
             </div>
@@ -391,7 +393,7 @@ export function ExpenseManagementPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Property Rent lease</p>
-            <h3 className="text-2xl font-black text-rose-950 mt-1">${rentTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
+            <h3 className="text-2xl font-black text-rose-950 mt-1">{formatCurrency(rentTotal)}</h3>
             <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium mt-1">
               <span>Main hub + clinical facilities</span>
             </div>
@@ -523,7 +525,7 @@ export function ExpenseManagementPage() {
 
                         {/* Amount Due */}
                         <td className="p-4 text-right pr-6 font-mono font-black text-gray-900 text-sm">
-                          ${exp.amount.toFixed(2)}
+                          {formatCurrency(exp.amount)}
                         </td>
 
                         {/* Action buttons */}
@@ -596,7 +598,7 @@ export function ExpenseManagementPage() {
                 {/* Center absolute indicator */}
                 <div className="absolute flex flex-col items-center">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Cumulated</span>
-                  <span className="text-xl font-black text-slate-800 font-mono">${totalExpenses.toFixed(0)}</span>
+                  <span className="text-xl font-black text-slate-800 font-mono">{formatCurrency(totalExpenses)}</span>
                 </div>
               </div>
 
@@ -609,7 +611,7 @@ export function ExpenseManagementPage() {
                       style={{ backgroundColor: COLORS[idx % COLORS.length] }} 
                     />
                     <span className="truncate">{entry.name}:</span>
-                    <span className="font-bold text-gray-900 font-mono ml-auto">${entry.value.toFixed(0)}</span>
+                    <span className="font-bold text-gray-900 font-mono ml-auto">{formatCurrency(entry.value)}</span>
                   </div>
                 ))}
               </div>
@@ -707,7 +709,7 @@ export function ExpenseManagementPage() {
 
                   {/* amount of billing */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-450 uppercase">Expense Amount Paid ($) *</label>
+                    <label className="text-[10px] font-bold text-gray-450 uppercase">Expense Amount Paid ({symbol}) *</label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                       <input 

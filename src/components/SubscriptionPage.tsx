@@ -7,14 +7,10 @@ import {
 } from "lucide-react";
 
 export function SubscriptionPage() {
-  const { activeClient, trialDaysRemaining, updateTenant, addTransaction } = useAuth();
+  const { activeClient, trialDaysRemaining, updateTenant, addTransaction, saasPlans, paymentAccounts } = useAuth();
   
   const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'PayPal' | 'JazzCash' | 'Easypaisa' | 'Pakistani Bank Transfer'>('JazzCash');
-  const [walletNumber, setWalletNumber] = useState('03001234567');
-  const [selectedBank, setSelectedBank] = useState('Habib Bank Limited (HBL)');
-  const [bankAccountNumber, setBankAccountNumber] = useState('PK89HBLB00020192837492');
-  const [paypalEmail, setPaypalEmail] = useState('billing@pharmacy.com');
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -31,43 +27,6 @@ export function SubscriptionPage() {
       </div>
     );
   }
-
-  // Active plans descriptions
-  const PLANS_LIST = [
-    { 
-      name: "Starter Plan", 
-      price: 49, 
-      features: [
-        "1 Pharmacy isolated branch", 
-        "Standard POS billing interface", 
-        "1,000 Medicine SKU Catalog", 
-        "Local State SQLite failover buffer",
-        "Dual-role access limit"
-      ] 
-    },
-    { 
-      name: "Professional Plan", 
-      price: 149, 
-      features: [
-        "Up to 3 Branches sync grid", 
-        "Integrated AI drug interaction index", 
-        "Unlimited Medicine SKU Catalog", 
-        "Detailed Analytics & reports engine", 
-        "PostgreSQL Cloud database sync link"
-      ] 
-    },
-    { 
-      name: "Enterprise Plan", 
-      price: 299, 
-      features: [
-        "Unlimited Pharmacy branches", 
-        "Corporate HQ Master Dashboard", 
-        "Complete role-based security matrix", 
-        "Dedicated VIP 24/7 SLA Support", 
-        "Multi-cloud custom Postgres failover"
-      ] 
-    }
-  ];
 
   const handleCheckoutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,15 +132,15 @@ export function SubscriptionPage() {
       <div>
         <div className="mb-4">
           <h2 className="text-md font-bold text-gray-800">SaaS Dynamic Plan Catalog</h2>
-          <p className="text-xs text-gray-500">Pick an upgrade tier. Selecting a plan opens the local Pakistani Bank and mobile wallet checkout wizard.</p>
+          <p className="text-xs text-gray-500">Pick an upgrade tier. Selecting a plan opens the local checkout wizard.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PLANS_LIST.map(plan => {
+          {saasPlans.map(plan => {
             const isActive = activeClient.plan === plan.name;
             return (
               <div 
-                key={plan.name} 
+                key={plan.id} 
                 className={`p-6 md:p-8 rounded-3xl border flex flex-col justify-between relative transition ${
                   isActive 
                     ? 'bg-[#09352F]/5 border-emerald-600 shadow-md ring-1 ring-emerald-600' 
@@ -198,6 +157,9 @@ export function SubscriptionPage() {
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">{plan.name}</h3>
                     <p className="text-3xl font-black text-[#09352F] mt-2">${plan.price}<span className="text-xs font-semibold text-gray-400 font-mono"> / mo</span></p>
+                    {plan.description && (
+                      <p className="text-[10px] text-gray-500 font-medium mt-1.5 leading-relaxed bg-gray-50 p-2 rounded-lg border border-gray-100">{plan.description}</p>
+                    )}
                   </div>
 
                   <ul className="space-y-3 pt-3 border-t border-gray-100">
@@ -213,7 +175,12 @@ export function SubscriptionPage() {
                 <div className="mt-8 pt-4">
                   <button 
                     disabled={isActive}
-                    onClick={() => setSelectedPlan({ name: plan.name, price: plan.price })}
+                    onClick={() => {
+                      setSelectedPlan({ name: plan.name, price: plan.price });
+                      if (paymentAccounts.length > 0) {
+                        setPaymentMethod(paymentAccounts[0].bankName);
+                      }
+                    }}
                     className={`w-full py-3 rounded-xl font-bold text-xs transition uppercase tracking-wider cursor-pointer select-none ${
                       isActive 
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed border' 
@@ -232,22 +199,11 @@ export function SubscriptionPage() {
       {/* Dedicated Payments Integration explanation badge */}
       <div className="p-6 bg-[#09352F] text-white rounded-3xl border flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="space-y-1">
-          <span className="bg-[#A7D129]/15 text-[#A7D129] text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full border border-[#A7D129]/30">Integrated API Support</span>
-          <h4 className="text-sm font-black text-white">All Pakistani Banks & Mobile Wallets Supported</h4>
+          <span className="bg-[#A7D129]/15 text-[#A7D129] text-[8px] font-black uppercase px-2.5 py-0.5 rounded-full border border-[#A7D129]/30">Payment Accounts Sync</span>
+          <h4 className="text-sm font-black text-white">Directly Pay to Admin Accounts</h4>
           <p className="text-xs text-emerald-100 opacity-80 max-w-2xl leading-relaxed">
-            Easypaisa SDK, JazzCash USSD Push Notifications, and Habib Bank (HBL) / Allied / Bank Alfalah clearing codes are fully connected. Try upgrading your plan above to mock active transactions!
+            The platform super admin has securely attached payment accounts. You can select one, send the funds manually, and record your approval logic below.
           </p>
-        </div>
-        
-        <div className="flex gap-2 shrink-0">
-          <div className="bg-white/10 px-3 py-2 rounded-xl border border-white/10 text-center">
-            <span className="font-extrabold text-[#A7D129] text-[10px] block">EasyPaisa</span>
-            <span className="text-[8px] text-emerald-100">Mobile API v3.4</span>
-          </div>
-          <div className="bg-white/10 px-3 py-2 rounded-xl border border-white/10 text-center">
-            <span className="font-extrabold text-[#A7D129] text-[10px] block">JazzCash</span>
-            <span className="text-[8px] text-emerald-100">USSD Push</span>
-          </div>
         </div>
       </div>
 
@@ -283,125 +239,42 @@ export function SubscriptionPage() {
                     
                     {/* Payment Mode switcher */}
                     <div className="space-y-1.5">
-                      <label className="text-[9.5px] font-black uppercase text-gray-400 tracking-wider">Select Gateway Channel</label>
+                      <label className="text-[9.5px] font-black uppercase text-gray-400 tracking-wider">Select Payment Account to Send Funds</label>
                       <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
-                        
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('JazzCash')}
-                          className={`p-3 rounded-2xl border flex items-center gap-2.5 transition shrink-0 cursor-pointer ${
-                            paymentMethod === 'JazzCash' ? 'bg-[#09352F]/5 border-[#09352F] text-[#09352F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <Smartphone className="w-4 h-4 text-amber-500" />
-                          <span>JazzCash</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('Easypaisa')}
-                          className={`p-3 rounded-2xl border flex items-center gap-2.5 transition shrink-0 cursor-pointer ${
-                            paymentMethod === 'Easypaisa' ? 'bg-[#09352F]/5 border-[#09352F] text-[#09352F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <Smartphone className="w-4 h-4 text-emerald-500" />
-                          <span>Easypaisa</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('Pakistani Bank Transfer')}
-                          className={`p-3 rounded-2xl border flex items-center gap-2.5 transition shrink-0 cursor-pointer ${
-                            paymentMethod === 'Pakistani Bank Transfer' ? 'bg-[#09352F]/5 border-[#09352F] text-[#09352F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <Landmark className="w-4 h-4 text-indigo-500" />
-                          <span>Pakistan Banks</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('PayPal')}
-                          className={`p-3 rounded-2xl border flex items-center gap-2.5 transition shrink-0 cursor-pointer ${
-                            paymentMethod === 'PayPal' ? 'bg-[#09352F]/5 border-[#09352F] text-[#09352F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          <CreditCard className="w-4 h-4 text-blue-500" />
-                          <span>PayPal</span>
-                        </button>
-
+                        {paymentAccounts.length === 0 && (
+                          <div className="col-span-2 text-xs text-rose-500 p-3 bg-rose-50 rounded-xl border border-rose-100">
+                            No payment accounts have been configured by the admin yet!
+                          </div>
+                        )}
+                        {paymentAccounts.map(acc => (
+                         <button
+                           key={acc.id}
+                           type="button"
+                           onClick={() => setPaymentMethod(acc.bankName)}
+                           className={`p-3 rounded-2xl border flex flex-col items-start gap-1 transition cursor-pointer text-left ${
+                             paymentMethod === acc.bankName ? 'bg-[#09352F]/5 border-[#09352F] text-[#09352F]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                           }`}
+                         >
+                           <span className="font-extrabold">{acc.bankName}</span>
+                           <span className="text-[9px] font-mono opacity-70 line-clamp-1">{acc.accountName} - {acc.accountNumber}</span>
+                         </button>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Conditional Input forms based on gateway */}
-                    {['JazzCash', 'Easypaisa'].includes(paymentMethod) && (
+                    {paymentMethod && paymentAccounts.length > 0 && (
                       <div className="p-4 bg-slate-50 border rounded-2xl space-y-3 animate-slide-up">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Mobile Wallet Number</label>
+                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Transaction / Sender ID</label>
                           <input 
                             type="text" 
                             required
-                            placeholder="e.g. 03001234567"
-                            value={walletNumber}
-                            onChange={e => setWalletNumber(e.target.value)}
+                            placeholder="e.g. TID-9812481 or your account"
                             className="w-full text-xs p-2.5 bg-white border border-gray-200 rounded-xl font-bold font-mono outline-none"
                           />
                         </div>
-                        <p className="text-[10px] text-gray-400">
-                          <strong>USSD Notification push:</strong> Releasing payment triggers a direct OTP PIN code request on your associated {paymentMethod} Telenor/Mobilink SIM handset.
-                        </p>
-                      </div>
-                    )}
-
-                    {paymentMethod === 'Pakistani Bank Transfer' && (
-                      <div className="p-4 bg-slate-50 border rounded-2xl space-y-3 animate-slide-up">
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Select Pakistani Bank</label>
-                          <select
-                            value={selectedBank}
-                            onChange={e => setSelectedBank(e.target.value)}
-                            className="w-full text-xs p-2.5 bg-white border border-gray-200 rounded-xl font-bold outline-none cursor-pointer"
-                          >
-                            <option value="Habib Bank Limited (HBL)">Habib Bank Limited (HBL)</option>
-                            <option value="Bank Alfalah">Bank Alfalah</option>
-                            <option value="Allied Bank (ABL)">Allied Bank (ABL)</option>
-                            <option value="United Bank Limited (UBL)">United Bank Limited (UBL)</option>
-                            <option value="Meezan Bank">Meezan Bank (Islamic)</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Bank IBAN/Account Number</label>
-                          <input 
-                            type="text" 
-                            required
-                            placeholder="PK89HBLB00020192837492"
-                            value={bankAccountNumber}
-                            onChange={e => setBankAccountNumber(e.target.value)}
-                            className="w-full text-xs p-2.5 bg-white border border-gray-200 rounded-xl font-mono font-bold outline-none"
-                          />
-                        </div>
-                        <p className="text-[10px] text-gray-400">
-                          Directly links checkout criteria via local Pakistani 1Link bank clearing networks instantly.
-                        </p>
-                      </div>
-                    )}
-
-                    {paymentMethod === 'PayPal' && (
-                      <div className="p-4 bg-slate-50 border rounded-2xl space-y-3 animate-slide-up font-sans">
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">PayPal Account Email Address</label>
-                          <input 
-                            type="email" 
-                            required
-                            placeholder="billing@yourpharmacy.com"
-                            value={paypalEmail}
-                            onChange={e => setPaypalEmail(e.target.value)}
-                            className="w-full text-xs p-2.5 bg-white border border-gray-200 rounded-xl font-bold outline-none"
-                          />
-                        </div>
-                        <p className="text-[10px] text-gray-450 leading-relaxed">
-                          Redirects to secure PayPal credit/debit gateway parameters.
+                        <p className="text-[10px] text-gray-400 leading-relaxed">
+                          Please send exactly <strong>${selectedPlan.price}</strong> to the selected account ({paymentMethod}) and enter your sender details or TID to inform the admin.
                         </p>
                       </div>
                     )}
@@ -429,8 +302,8 @@ export function SubscriptionPage() {
                       
                       <button 
                         type="submit"
-                        disabled={isProcessing}
-                        className="flex-1 bg-[#09352F] hover:bg-[#11574d] text-white font-black py-3 rounded-xl text-xs transition uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5"
+                        disabled={isProcessing || paymentAccounts.length === 0}
+                        className={`flex-1 font-black py-3 rounded-xl text-xs transition uppercase tracking-wider flex items-center justify-center gap-1.5 ${isProcessing || paymentAccounts.length === 0 ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-[#09352F] hover:bg-[#11574d] text-white cursor-pointer'}`}
                       >
                         {isProcessing ? (
                           <>

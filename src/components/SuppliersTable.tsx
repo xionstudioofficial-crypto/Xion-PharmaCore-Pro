@@ -97,7 +97,11 @@ const INITIAL_SUPPLIERS: Supplier[] = [
   }
 ];
 
-export function SuppliersTable() {
+interface SuppliersTableProps {
+  compact?: boolean;
+}
+
+export function SuppliersTable({ compact = false }: SuppliersTableProps) {
   const [suppliers, setSuppliers] = useState<Supplier[]>(INITIAL_SUPPLIERS);
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -234,130 +238,167 @@ export function SuppliersTable() {
     <motion.div 
       initial={{ opacity: 0, y: 15 }} 
       animate={{ opacity: 1, y: 0 }} 
-      className="space-y-6"
+      className={compact ? "space-y-4" : "space-y-6"}
     >
       {/* 1. Suppliers Header Actions layout */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-        <div>
-          <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
-            <User className="w-5 h-5 text-emerald-700" />
-            <span>Integrated Suppliers Ledger & Directory</span>
-          </h2>
-          <p className="text-xs text-gray-400 mt-1">Regulate pharmaceutical wholesalers contact sheets, inspect rolling liability balances, and audit live transactional debits.</p>
-        </div>
+      {!compact ? (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+          <div>
+            <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
+              <User className="w-5 h-5 text-emerald-700" />
+              <span>Integrated Suppliers Ledger & Directory</span>
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">Regulate pharmaceutical wholesalers contact sheets, inspect rolling liability balances, and audit live transactional debits.</p>
+          </div>
 
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs px-5 py-3 rounded-2xl transition active:scale-95 shadow-xs"
-        >
-          <Plus className="w-4 h-4" /> Register New Supplier
-        </button>
-      </div>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs px-5 py-3 rounded-2xl transition active:scale-95 shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Register New Supplier
+          </button>
+        </div>
+      ) : (
+        <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+          <div>
+            <h2 className="text-sm font-extrabold text-[#0c443c] flex items-center gap-1.5">
+              <User className="w-4 h-4 text-emerald-700" />
+              <span>Key Suppliers</span>
+            </h2>
+            <p className="text-[10px] text-gray-400 font-medium mt-0.5">Rolling liability balances & contacts</p>
+          </div>
+          <button 
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-1 bg-emerald-700 hover:bg-emerald-850 text-white font-extrabold text-[10px] px-3 py-2 rounded-xl transition active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> Register
+          </button>
+        </div>
+      )}
 
       {/* 2. Compact Search Tools Bar */}
-      <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative">
-          <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Filter suppliers by brand name, primary contact, key account managers, or emails..."
+            placeholder={compact ? "Filter suppliers..." : "Filter suppliers by brand name, primary contact, key account managers, or emails..."}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-xs bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-700 outline-none transition font-medium text-gray-800"
+            className="w-full pl-11 pr-4 py-2.5 text-xs bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-1 focus:ring-emerald-700 outline-none transition font-medium text-gray-800"
           />
         </div>
       </div>
 
       {/* 3. Bento Layout Grid of Supplier Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={compact 
+        ? "space-y-2" 
+        : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      }>
         {filteredSuppliers.map(sup => (
           <motion.div 
             key={sup.id}
             layoutId={sup.id}
-            className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-700/30 transition-all hover:shadow-md relative group overflow-hidden"
+            className={compact 
+              ? "bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:border-emerald-700/30 transition-all font-bold text-xs text-gray-800"
+              : "bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-700/30 transition-all hover:shadow-md relative group overflow-hidden"
+            }
           >
-            {/* Header section card */}
-            <div className="space-y-1.5 pb-2.5 border-b border-gray-50">
-              <div className="flex justify-between items-start">
-                <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">{sup.id}</span>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                  sup.dueAmount > 0 ? "bg-rose-50 text-rose-700 border border-rose-100/50" : "bg-emerald-50 text-emerald-800 border border-emerald-100/30"
-                }`}>
-                  {sup.dueAmount > 0 ? "Outstanding Dues" : "Paid Settled"}
-                </span>
-              </div>
-              <h4 className="font-extrabold text-gray-900 group-hover:text-emerald-800 transition text-sm leading-tight">{sup.companyName}</h4>
-              <p className="text-[11px] text-gray-400 font-semibold flex items-center gap-1">
-                <User className="w-3 h-3 text-emerald-700" /> Accounts rep: {sup.contactName}
-              </p>
-            </div>
-
-            {/* Middle contact details listed */}
-            <div className="space-y-2 text-xs text-gray-600 font-medium">
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span className="font-mono">{sup.phone}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span className="truncate">{sup.email}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
-                <span className="line-clamp-1">{sup.address}</span>
-              </div>
-            </div>
-
-            {/* Calculations and Dues metrics boxes */}
-            <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-100/30 grid grid-cols-2 gap-2 text-xs font-mono">
-              <div>
-                <p className="text-gray-400 font-sans text-[10px]">Due Balance</p>
-                <p className={`font-black text-sm mt-0.5 ${sup.dueAmount > 0 ? "text-rose-600" : "text-emerald-800"}`}>
+            {compact ? (
+              <>
+                <span className="truncate">{sup.companyName}</span>
+                <span className={`text-[10px] ${sup.dueAmount > 0 ? "text-rose-600" : "text-emerald-700"}`}>
                   ${sup.dueAmount.toFixed(2)}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-400 font-sans text-[10px]">Last Purchase</p>
-                <p className="font-semibold text-gray-700 mt-0.5" title={sup.lastPurchaseRef}>
-                  {sup.lastPurchaseDate !== "N/A" ? sup.lastPurchaseDate : "No Record"}
-                </p>
-              </div>
-            </div>
+                </span>
+              </>
+            ) : (
+              <>
+                {/* Header section card */}
+                <div className="space-y-1.5 pb-2.5 border-b border-gray-50 min-w-0">
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest shrink-0">{sup.id}</span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md truncate max-w-[140px] ${
+                      sup.dueAmount > 0 ? "bg-rose-50 text-rose-700 border border-rose-100/50" : "bg-emerald-50 text-emerald-800 border border-emerald-100/30"
+                    }`}>
+                      {sup.dueAmount > 0 ? "Outstanding Dues" : "Paid Settled"}
+                    </span>
+                  </div>
+                  <h4 className="font-extrabold text-gray-900 group-hover:text-emerald-800 transition text-sm leading-tight truncate" title={sup.companyName}>{sup.companyName}</h4>
+                  <p className="text-[11px] text-gray-400 font-semibold flex items-center gap-1 truncate">
+                    <User className="w-3 h-3 text-emerald-700 shrink-0" /> <span className="truncate">Accounts rep: {sup.contactName}</span>
+                  </p>
+                </div>
 
-            {/* Control buttons inside card */}
-            <div className="flex gap-2 pt-2 text-xs">
-              <button 
-                onClick={() => {
-                  setSelectedSupplier(sup);
-                  setLedgerModalTab("Ledger");
-                  setIsLedgerOpen(true);
-                }}
-                className="flex-1 text-center font-bold bg-slate-900 text-slate-100 hover:bg-slate-800 py-2.5 rounded-xl transition"
-              >
-                Open Ledger
-              </button>
+                {/* Middle contact details listed */}
+                <div className="space-y-2 text-xs text-gray-600 font-medium min-w-0">
+                  <div className="flex items-center gap-2 truncate">
+                    <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="font-mono text-gray-700 truncate">{sup.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2 truncate">
+                    <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span className="truncate text-gray-700" title={sup.email}>{sup.email}</span>
+                  </div>
+                  <div className="flex items-start gap-2 truncate">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                    <span className="line-clamp-1 text-gray-700" title={sup.address}>{sup.address}</span>
+                  </div>
+                </div>
 
-              <button 
-                onClick={() => {
-                  setSelectedSupplier(sup);
-                  setLedgerModalTab("Pay");
-                  setIsLedgerOpen(true);
-                }}
-                className="flex-1 text-center font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 py-2.5 rounded-xl transition"
-              >
-                Record Payment
-              </button>
+                {/* Calculations and Dues metrics boxes */}
+                <div className="bg-gray-50/70 p-4 rounded-2xl border border-gray-100/30 grid grid-cols-2 gap-2 text-xs font-mono min-w-0">
+                  <div className="min-w-0">
+                    <p className="text-gray-450 font-sans text-[9px] uppercase font-bold tracking-wider">Due Balance</p>
+                    <p className={`font-black text-xs sm:text-sm mt-0.5 truncate ${sup.dueAmount > 0 ? "text-rose-600" : "text-emerald-800"}`}>
+                      ${sup.dueAmount.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="min-w-0 border-l border-gray-200/50 pl-2.5">
+                    <p className="text-gray-455 font-sans text-[9px] uppercase font-bold tracking-wider">Last Purchase</p>
+                    <p className="font-semibold text-gray-750 mt-0.5 truncate" title={sup.lastPurchaseRef}>
+                      {sup.lastPurchaseDate !== "N/A" ? sup.lastPurchaseDate : "No Record"}
+                    </p>
+                  </div>
+                </div>
 
-              <button 
-                onClick={() => handleDeleteSupplier(sup.id, sup.companyName)}
-                className="p-2.5 text-gray-400 hover:text-rose-600 bg-gray-50 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100/50"
-                title="Remove Wholesaler"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+                {/* Control buttons inside card */}
+                <div className="flex gap-2 pt-2 text-xs">
+                  <button 
+                    onClick={() => {
+                      setSelectedSupplier(sup);
+                      setLedgerModalTab("Ledger");
+                      setIsLedgerOpen(true);
+                    }}
+                    className="flex-1 text-center font-bold bg-slate-900 hover:bg-slate-800 text-slate-100 py-2 rounded-xl transition cursor-pointer text-[10px] sm:text-xs"
+                  >
+                    Open Ledger
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setSelectedSupplier(sup);
+                      setLedgerModalTab("Pay");
+                      setIsLedgerOpen(true);
+                    }}
+                    className="flex-1 text-center font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 py-2 rounded-xl transition cursor-pointer text-[10px] sm:text-xs"
+                  >
+                    Pay Dues
+                  </button>
+
+                  <button 
+                    onClick={() => handleDeleteSupplier(sup.id, sup.companyName)}
+                    className="p-2 text-gray-400 hover:text-rose-600 bg-gray-50 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100/50 cursor-pointer"
+                    title="Remove Wholesaler"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         ))}
+
 
         {filteredSuppliers.length === 0 && (
           <div className="col-span-full text-center py-16 bg-white border border-gray-100 shadow-sm rounded-3xl text-gray-400">

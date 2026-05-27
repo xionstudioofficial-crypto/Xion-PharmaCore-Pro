@@ -72,6 +72,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
   }
 };
 
+export interface SaaSPricePlan {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  features: string[];
+}
+
+export interface PaymentAccount {
+  id: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  type: 'Bank' | 'Mobile Wallet' | 'Crypto' | 'Other';
+}
+
 export interface PharmacyTenant {
   id: string;
   name: string;
@@ -129,6 +145,13 @@ interface AuthContextType {
   deleteAnnouncement: (id: string) => void;
   transactions: SaaSTransaction[];
   addTransaction: (tx: Omit<SaaSTransaction, 'id'>) => void;
+  
+  saasPlans: SaaSPricePlan[];
+  updateSaaSPlan: (id: string, updates: Partial<SaaSPricePlan>) => void;
+  
+  paymentAccounts: PaymentAccount[];
+  addPaymentAccount: (account: Omit<PaymentAccount, 'id'>) => void;
+  deletePaymentAccount: (id: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -217,6 +240,65 @@ const DEFAULT_TRANSACTIONS: SaaSTransaction[] = [
   }
 ];
 
+const DEFAULT_PLANS: SaaSPricePlan[] = [
+  { 
+    id: "plan-starter",
+    name: "Starter Plan", 
+    description: "Basic single-branch dispensing",
+    price: 49, 
+    features: [
+      "1 Pharmacy isolated branch", 
+      "Standard POS billing interface", 
+      "1,000 Medicine SKU Catalog", 
+      "Local State SQLite failover buffer",
+      "Dual-role access limit"
+    ] 
+  },
+  { 
+    id: "plan-professional",
+    name: "Professional Plan", 
+    description: "Advanced inventory + drug lookups",
+    price: 149, 
+    features: [
+      "Up to 3 Branches sync grid", 
+      "Integrated AI drug interaction index", 
+      "Unlimited Medicine SKU Catalog", 
+      "Detailed Analytics & reports engine", 
+      "PostgreSQL Cloud database sync link"
+    ] 
+  },
+  { 
+    id: "plan-enterprise",
+    name: "Enterprise Plan", 
+    description: "Offline failover & Postgres replication",
+    price: 299, 
+    features: [
+      "Unlimited Pharmacy branches", 
+      "Corporate HQ Master Dashboard", 
+      "Complete role-based security matrix", 
+      "Dedicated VIP 24/7 SLA Support", 
+      "Multi-cloud custom Postgres failover"
+    ] 
+  }
+];
+
+const DEFAULT_ACCOUNTS: PaymentAccount[] = [
+  {
+    id: "acc-1",
+    bankName: "JazzCash Wallet",
+    accountName: "TechAdmin Software",
+    accountNumber: "0300-1234567",
+    type: "Mobile Wallet"
+  },
+  {
+    id: "acc-2",
+    bankName: "HBL - Habib Bank Limited",
+    accountName: "SaaS Solutions HQ",
+    accountNumber: "PK89HBLB00020192837492",
+    type: "Bank"
+  }
+];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tenants, setTenants] = useState<PharmacyTenant[]>(() => {
     const saved = localStorage.getItem('pharma_saas_tenants');
@@ -231,6 +313,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [transactions, setTransactions] = useState<SaaSTransaction[]>(() => {
     const saved = localStorage.getItem('pharma_saas_transactions');
     return saved ? JSON.parse(saved) : DEFAULT_TRANSACTIONS;
+  });
+
+  const [saasPlans, setSaasPlans] = useState<SaaSPricePlan[]>(() => {
+    const saved = localStorage.getItem('pharma_saas_plans');
+    return saved ? JSON.parse(saved) : DEFAULT_PLANS;
+  });
+
+  const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>(() => {
+    const saved = localStorage.getItem('pharma_saas_accounts');
+    return saved ? JSON.parse(saved) : DEFAULT_ACCOUNTS;
   });
 
   // Custom permissions that Owner/Admin can toggle in-app
@@ -255,6 +347,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('pharma_saas_transactions', JSON.stringify(transactions));
   }, [transactions]);
+
+  useEffect(() => {
+    localStorage.setItem('pharma_saas_plans', JSON.stringify(saasPlans));
+  }, [saasPlans]);
+
+  useEffect(() => {
+    localStorage.setItem('pharma_saas_accounts', JSON.stringify(paymentAccounts));
+  }, [paymentAccounts]);
 
   useEffect(() => {
     localStorage.setItem('pharma_custom_permissions', JSON.stringify(customPermissions));
@@ -304,6 +404,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addTransaction = (tx: Omit<SaaSTransaction, 'id'>) => {
     const id = "tx-" + Math.floor(100 + Math.random() * 900);
     setTransactions(prev => [{ ...tx, id }, ...prev]);
+  };
+
+  const updateSaaSPlan = (id: string, updates: Partial<SaaSPricePlan>) => {
+    setSaasPlans(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const addPaymentAccount = (account: Omit<PaymentAccount, 'id'>) => {
+    const id = "acc-" + Math.random().toString(36).substring(2, 9);
+    setPaymentAccounts(prev => [...prev, { ...account, id }]);
+  };
+
+  const deletePaymentAccount = (id: string) => {
+    setPaymentAccounts(prev => prev.filter(a => a.id !== id));
   };
 
   const updateRolePermissions = (role: UserRole, permissions: Partial<RolePermissions>) => {
@@ -416,7 +529,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addAnnouncement,
       deleteAnnouncement,
       transactions,
-      addTransaction
+      addTransaction,
+      
+      saasPlans,
+      updateSaaSPlan,
+      
+      paymentAccounts,
+      addPaymentAccount,
+      deletePaymentAccount
     }}>
       {children}
     </AuthContext.Provider>

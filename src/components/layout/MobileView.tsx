@@ -10,6 +10,8 @@ import { ExpiringSoon } from "@/src/components/ExpiringSoon";
 import { SalesOverview } from "@/src/components/SalesOverview";
 import { OrdersTable } from "@/src/components/OrdersTable";
 import { ActivityLogs } from "@/src/components/ActivityLogs";
+import { SuppliersTable } from "@/src/components/SuppliersTable";
+import { generatePharmacyReport } from "@/src/lib/pdfGenerator";
 
 // Beautiful custom medicine package mockup rendered in responsive vectors
 const MedicineBox = ({ color }: { color: string }) => {
@@ -220,6 +222,10 @@ interface MobileViewProps {
   setIsExpiryOpen: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+  orders: any[];
+  inventory: any[];
+  setInventory: (inv: any[]) => void;
+  setOrders: (ords: any[]) => void;
 }
 
 import { Sidebar } from "@/src/components/layout/Sidebar";
@@ -233,7 +239,11 @@ export function MobileView({
   setIsScannerOpen,
   setIsExpiryOpen,
   isSidebarOpen,
-  toggleSidebar
+  toggleSidebar,
+  orders,
+  inventory,
+  setInventory,
+  setOrders
 }: MobileViewProps) {
   return (
     <div className="md:hidden flex flex-col min-h-screen bg-[#F6FAF8] text-slate-800 pb-28">
@@ -372,11 +382,25 @@ export function MobileView({
               {/* Analytics high fidelity section */}
               <MobileSalesChart />
 
+              {/* Recent Orders Section */}
+              <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+                <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider mb-3">Recent Orders</h3>
+                <div className="overflow-x-auto select-none rounded-xl">
+                    <OrdersTable orders={orders} />
+                </div>
+              </div>
+
+              {/* Suppliers Section (Compact) */}
+              <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+                <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider mb-3">Suppliers</h3>
+                <SuppliersTable compact={true} />
+              </div>
+
               {/* Quick Overview Section */}
               <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-extrabold text-gray-800 text-sm">Quick Overview</h3>
-                  <button onClick={() => setActiveTab('Sales / Billing')} className="text-xs font-bold text-emerald-600 hover:text-emerald-700">
+                  <button onClick={() => setActiveTab('Sales / Billing / Returns')} className="text-xs font-bold text-emerald-600 hover:text-emerald-700">
                     View All
                   </button>
                 </div>
@@ -439,7 +463,7 @@ export function MobileView({
             </motion.div>
           )}
 
-          {activeTab === 'Sales / Billing' && (
+          {activeTab === 'Sales / Billing / Returns' && (
             <motion.div 
               key="mobile-sales"
               initial={{ opacity: 0, y: 15 }}
@@ -492,7 +516,7 @@ export function MobileView({
                 <p className="text-xs text-gray-500 mt-1">Acquire physical records of pharmacy activities instantly.</p>
                 
                 <button 
-                  onClick={() => import('@/src/lib/pdfGenerator').then(m => m.generatePharmacyReport())}
+                  onClick={() => generatePharmacyReport()}
                   className="w-full mt-4 flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white p-3.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
                 >
                   <Printer className="w-4 h-4" /> Print PDF Inventory Report
@@ -508,7 +532,7 @@ export function MobileView({
           )}
 
           {/* Any other layout redirects to dashboard fallback */}
-          {activeTab !== 'Dashboard' && activeTab !== 'Medicines' && activeTab !== 'Sales / Billing' && activeTab !== 'Reports' && (
+          {activeTab !== 'Dashboard' && activeTab !== 'Medicines' && activeTab !== 'Sales / Billing / Returns' && activeTab !== 'Reports' && (
             <motion.div 
               key="mobile-fallback"
               initial={{ opacity: 0 }}

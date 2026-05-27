@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Users, DatabaseZap, CheckCircle, Radio, Calendar, Plus, Edit2, 
   Trash2, ShieldAlert, BadgeInfo, CreditCard, HelpCircle, Save, Info, AlertOctagon, 
-  ArrowRight, Search, Activity, Volume2, Landmark, RefreshCcw, DollarSign, ListFilter, TrendingUp
+  ArrowRight, Search, Activity, Volume2, Landmark, RefreshCcw, DollarSign, ListFilter, TrendingUp, Settings, X
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
@@ -12,7 +12,9 @@ export function SaaSSuperAdminPage() {
   const { 
     tenants, addTenant, updateTenant, deleteTenant, 
     announcements, addAnnouncement, deleteAnnouncement, 
-    transactions, addTransaction 
+    transactions, addTransaction,
+    saasPlans, updateSaaSPlan,
+    paymentAccounts, addPaymentAccount, deletePaymentAccount
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'pharmacies' | 'revenue' | 'broadcast'>('pharmacies');
@@ -41,10 +43,8 @@ export function SaaSSuperAdminPage() {
   const [txPlan, setTxPlan] = useState('Starter Plan');
   const [txMethod, setTxMethod] = useState<'PayPal' | 'JazzCash' | 'Easypaisa' | 'Pakistani Bank Transfer'>('JazzCash');
 
-  // Package Management values
-  const [starterPrice, setStarterPrice] = useState(49);
-  const [proPrice, setProPrice] = useState(149);
-  const [entPrice, setEntPrice] = useState(299);
+  const [editingPlan, setEditingPlan] = useState<string | null>(null);
+  const [editPlanData, setEditPlanData] = useState<any>(null);
 
   const [toast, setToast] = useState('');
   const triggerToast = (msg: string) => {
@@ -153,10 +153,12 @@ export function SaaSSuperAdminPage() {
   const aggregateSalesAcrossPlatform = totalPharmacies * 1450 + 2420; // Simulated backend sum of client databases
 
   // Recharts Chart Formats
+  const getPlanPrice = (name: string) => saasPlans.find(p => name.includes(p.name))?.price || 0;
+
   const billingStatsData = [
-    { name: 'Starter Plan', Count: tenants.filter(t => t.plan.includes('Starter')).length, Revenue: tenants.filter(t => t.plan.includes('Starter')).length * starterPrice },
-    { name: 'Professional Plan', Count: tenants.filter(t => t.plan.includes('Professional') || t.plan.includes('Premium')).length, Revenue: tenants.filter(t => t.plan.includes('Professional') || t.plan.includes('Premium')).length * proPrice },
-    { name: 'Enterprise Plan', Count: tenants.filter(t => t.plan.includes('Enterprise')).length, Revenue: tenants.filter(t => t.plan.includes('Enterprise')).length * entPrice },
+    { name: 'Starter Plan', Count: tenants.filter(t => t.plan.includes('Starter')).length, Revenue: tenants.filter(t => t.plan.includes('Starter')).length * getPlanPrice('Starter Plan') },
+    { name: 'Professional Plan', Count: tenants.filter(t => t.plan.includes('Professional') || t.plan.includes('Premium')).length, Revenue: tenants.filter(t => t.plan.includes('Professional') || t.plan.includes('Premium')).length * getPlanPrice('Professional Plan') },
+    { name: 'Enterprise Plan', Count: tenants.filter(t => t.plan.includes('Enterprise')).length, Revenue: tenants.filter(t => t.plan.includes('Enterprise')).length * getPlanPrice('Enterprise Plan') },
   ];
 
   const transactionChartData = [
@@ -636,53 +638,33 @@ export function SaaSSuperAdminPage() {
                 </div>
 
                 <div className="space-y-3 pt-2">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-2xl border">
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-400 block">Starter Plan (30d Trial)</span>
-                      <span className="text-xs font-black text-gray-800">Basic single-branch dispensing</span>
+                  {saasPlans.map(plan => (
+                    <div key={plan.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-2xl border">
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-gray-400 block">{plan.name}</span>
+                        <span className="text-xs font-black text-gray-800 line-clamp-1 pr-2">{plan.description || plan.features[0]}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-gray-400 text-xs font-mono">$</span>
+                        <input 
+                          type="number" 
+                          value={plan.price}
+                          onChange={e => updateSaaSPlan(plan.id, { price: Number(e.target.value) })}
+                          className="w-14 bg-white p-1 rounded font-mono font-bold text-xs border text-right"
+                        />
+                        <button
+                          onClick={() => {
+                            setEditingPlan(plan.id);
+                            setEditPlanData({ ...plan, featuresText: plan.features.join('\n') });
+                          }}
+                          className="ml-1 p-1 lg:p-1.5 bg-gray-200 text-gray-600 rounded cursor-pointer hover:bg-gray-300 transition"
+                          title="Edit Plan Details"
+                        >
+                          <Settings className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-400 text-xs font-mono">$</span>
-                      <input 
-                        type="number" 
-                        value={starterPrice}
-                        onChange={e => setStarterPrice(Number(e.target.value))}
-                        className="w-14 bg-white p-1 rounded font-mono font-bold text-xs border text-right"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-2xl border">
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-400 block">Professional Plan</span>
-                      <span className="text-xs font-black text-gray-800">Advanced inventory + drug lookups</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-400 text-xs font-mono">$</span>
-                      <input 
-                        type="number" 
-                        value={proPrice}
-                        onChange={e => setProPrice(Number(e.target.value))}
-                        className="w-14 bg-white p-1 rounded font-mono font-bold text-xs border text-right"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-2xl border">
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-400 block">Enterprise Plan</span>
-                      <span className="text-xs font-black text-gray-800">Offline failover & Postgres replication</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-400 text-xs font-mono">$</span>
-                      <input 
-                        type="number" 
-                        value={entPrice}
-                        onChange={e => setEntPrice(Number(e.target.value))}
-                        className="w-14 bg-white p-1 rounded font-mono font-bold text-xs border text-right"
-                      />
-                    </div>
-                  </div>
+                  ))}
 
                   <button 
                     onClick={() => triggerToast("Pricing matrices updated. Automated SaaS invoicing rules saved.")}
@@ -693,30 +675,73 @@ export function SaaSSuperAdminPage() {
                 </div>
               </div>
 
-              {/* Pakistani micro-payment integration showcase */}
-              <div className="bg-slate-900 text-white p-5 rounded-3xl border border-slate-800 space-y-3 text-xs leading-relaxed">
-                <div className="flex items-center gap-2">
-                  <Landmark className="w-4 h-4 text-[#A7D129]" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#A7D129]">Local Integrations Matrix</span>
+              {/* Payment Accounts Manager */}
+              <div className="bg-white p-6 rounded-3xl border border-gray-150 shadow-xs space-y-4">
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-[#09352F] flex items-center gap-1.5">
+                      <Landmark className="w-4 h-4" /> Payment Accounts
+                    </h3>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      Configure recipient accounts shown to clients on the checkout page.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const newBank = prompt("Enter Gateway/Bank Name (e.g. HBL, JazzCash):");
+                      if (!newBank) return;
+                      const newAccount = prompt(`Enter Account title for ${newBank}:`);
+                      if (!newAccount) return;
+                      const newNumber = prompt(`Enter Account Number for ${newBank}:`);
+                      if (!newNumber) return;
+                      addPaymentAccount({
+                        bankName: newBank,
+                        accountName: newAccount,
+                        accountNumber: newNumber,
+                        type: newBank.toLowerCase().includes('jazzcash') || newBank.toLowerCase().includes('easypaisa') ? 'Mobile Wallet' : 'Bank'
+                      });
+                      triggerToast(`Payment account for ${newBank} added.`);
+                    }}
+                    className="shrink-0 bg-emerald-50 hover:bg-emerald-100 border border-emerald-150 p-1.5 rounded-lg text-emerald-800 transition cursor-pointer"
+                    title="Add Account"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-                <p className="text-slate-300 font-medium">
-                  We support Pakistan currency gateways automatically processing transaction parameters for:
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-                  <div className="bg-slate-950 p-2 rounded-xl border border-white/5 flex flex-col justify-between">
-                    <span className="font-extrabold text-[#A7D129]">Easypaisa Api</span>
-                    <span className="text-[9px] text-slate-400 mt-0.5">Instant OTC & Telenor billing API v3.4</span>
-                  </div>
 
-                  <div className="bg-slate-950 p-2 rounded-xl border border-white/5 flex flex-col justify-between">
-                    <span className="font-extrabold text-[#A7D129]">JazzCash API</span>
-                    <span className="text-[9px] text-slate-400 mt-0.5">Mobilink Direct USSD & wallet push logs</span>
-                  </div>
-
-                  <div className="bg-slate-950 p-2 rounded-xl border border-white/5 flex flex-col justify-between col-span-2">
-                    <span className="font-extrabold text-white">All Pakistani Commercial Banks</span>
-                    <span className="text-[9px] text-slate-400">HBL Bank Alfalah, Allied Bank, Allied Pay APIs mapped</span>
-                  </div>
+                <div className="space-y-3 pt-2">
+                  {paymentAccounts.map(acc => (
+                    <div key={acc.id} className="p-3 bg-gray-50 rounded-2xl border text-xs">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-extrabold text-gray-800">{acc.bankName}</span>
+                        <button 
+                          onClick={() => {
+                            if (confirm(`Remove account ${acc.bankName}?`)) {
+                              deletePaymentAccount(acc.id);
+                              triggerToast(`Account ${acc.bankName} removed.`);
+                            }
+                          }}
+                          className="text-gray-400 hover:text-rose-600 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-[11px]">
+                        <span className="text-gray-400 font-bold">Title:</span>
+                        <span className="font-mono text-gray-600">{acc.accountName}</span>
+                        <span className="text-gray-400 font-bold">No:</span>
+                        <span className="font-mono text-gray-600">{acc.accountNumber}</span>
+                      </div>
+                      <div className="mt-2 text-[9px] uppercase tracking-wider font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-0.5 rounded">
+                        {acc.type}
+                      </div>
+                    </div>
+                  ))}
+                  {paymentAccounts.length === 0 && (
+                     <div className="text-center p-4 text-[10px] text-gray-400 font-bold">
+                       No payment accounts configured.
+                     </div>
+                  )}
                 </div>
               </div>
 
@@ -980,6 +1005,85 @@ export function SaaSSuperAdminPage() {
 
       </div>
 
+      {/* Plan Edit Modal */}
+      {editingPlan && editPlanData && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden scale-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b flex justify-between items-center bg-gray-50/80">
+              <h3 className="font-black text-[#09352F] text-sm">Edit Plan Definition</h3>
+              <button onClick={() => setEditingPlan(null)} className="text-gray-400 hover:text-gray-600 transition p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plan Name</label>
+                <input 
+                  type="text" 
+                  value={editPlanData.name}
+                  onChange={(e) => setEditPlanData({...editPlanData, name: e.target.value})}
+                  className="w-full text-sm p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Short Description</label>
+                <input 
+                  type="text" 
+                  value={editPlanData.description || ''}
+                  onChange={(e) => setEditPlanData({...editPlanData, description: e.target.value})}
+                  className="w-full text-sm p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Base Monthly Price ($)</label>
+                <input 
+                  type="number" 
+                  value={editPlanData.price}
+                  onChange={(e) => setEditPlanData({...editPlanData, price: Number(e.target.value)})}
+                  className="w-full text-sm p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-mono font-bold outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Feature List (1 per line)</label>
+                <textarea 
+                  rows={6}
+                  value={editPlanData.featuresText}
+                  onChange={(e) => setEditPlanData({...editPlanData, featuresText: e.target.value})}
+                  className="w-full text-xs p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none resize-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t flex justify-end gap-2">
+              <button 
+                onClick={() => setEditingPlan(null)}
+                className="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-200 rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  updateSaaSPlan(editingPlan, {
+                    name: editPlanData.name,
+                    description: editPlanData.description,
+                    price: editPlanData.price,
+                    features: editPlanData.featuresText.split('\n').map((l: string) => l.trim()).filter(Boolean)
+                  });
+                  setEditingPlan(null);
+                  triggerToast("Plan definition updated successfully.");
+                }}
+                className="px-6 py-2 bg-[#09352F] text-white text-xs font-black rounded-xl hover:bg-[#11574d] transition cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

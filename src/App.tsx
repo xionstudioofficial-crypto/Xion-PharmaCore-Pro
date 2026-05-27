@@ -13,6 +13,8 @@ import { SubscriptionExpiredPage } from "@/src/components/SubscriptionExpiredPag
 import { SyncProvider } from "@/src/context/SyncContext";
 import { ActivityLogProvider } from "@/src/context/ActivityLogContext";
 import { ThemeProvider } from "@/src/context/ThemeContext";
+import { SettingsProvider, useSettings } from "@/src/context/SettingsContext";
+import { useCurrency } from "@/src/hooks/useCurrency";
 import { BranchProvider } from "@/src/context/BranchContext";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import { Sidebar } from "@/src/components/layout/Sidebar";
@@ -23,6 +25,7 @@ import { KpiCard } from "@/src/components/KpiCard";
 import { SalesChart } from "@/src/components/SalesChart";
 import { OrdersTable } from "@/src/components/OrdersTable";
 import { SyncIndicator } from "@/src/components/SyncIndicator";
+import { AiAssistant } from "@/src/components/AiAssistant";
 import { TopSellingMedicines } from "@/src/components/TopSellingMedicines";
 import { SalesOverview } from "@/src/components/SalesOverview";
 import { ExpiringSoon } from "@/src/components/ExpiringSoon";
@@ -39,15 +42,15 @@ import { SettingsModal } from "@/src/components/SettingsModal";
 import { GenericPage } from "@/src/components/GenericPage";
 import { MedicinesPage } from "@/src/components/MedicinesPage";
 import { DataTablePage } from "@/src/components/DataTablePage";
-import { SalesInterface } from "@/src/components/SalesInterface";
+import { SalesModulePage } from "@/src/components/SalesModulePage";
 import { SubscriptionPage } from "@/src/components/SubscriptionPage";
 import { StaffManagementPage } from "@/src/components/StaffManagementPage";
 import { NotificationsPage } from "@/src/components/NotificationsPage";
-import { BatchTrackingPage } from "@/src/components/BatchTrackingPage";
 import { InventoryPage } from "@/src/components/InventoryPage";
 import { PurchaseManagementPage } from "@/src/components/PurchaseManagementPage";
 import { ExpenseManagementPage } from "@/src/components/ExpenseManagementPage";
 import { CustomerManagementPage } from "@/src/components/CustomerManagementPage";
+import { BatchTrackingPage } from "@/src/components/BatchTrackingPage";
 import { ReportsPage } from "@/src/components/ReportsPage";
 import { DatabaseSyncPage } from "@/src/components/DatabaseSyncPage";
 import EnterpriseHub from "@/src/components/EnterpriseHub";
@@ -110,6 +113,8 @@ const itemVariants = {
 
 function AppContent() {
   const { user, currentRolePermissions, announcements } = useAuth();
+  const { themeSettings } = useSettings();
+  const { formatCurrency, symbol } = useCurrency();
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
@@ -118,6 +123,33 @@ function AppContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleSwitchTab = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail);
+      }
+    };
+    window.addEventListener('ai-switch-tab', handleSwitchTab);
+    return () => window.removeEventListener('ai-switch-tab', handleSwitchTab);
+  }, []);
+
+  useEffect(() => {
+    // Apply Dark Mode
+    if (themeSettings.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Apply layout density
+    document.documentElement.classList.remove('density-compact', 'density-comfortable');
+    document.documentElement.classList.add(`density-${themeSettings.layoutDensity}`);
+    
+    // Apply primary color as a CSS variable
+    document.documentElement.style.setProperty('--primary-color', themeSettings.primaryColor);
+  }, [themeSettings]);
 
   // Tenant-isolated dynamic states
   const [inventory, setInventory] = useState<any[]>([]);
@@ -239,14 +271,14 @@ function AppContent() {
     const marginPct = salesTotal > 0 ? ((profitTotal / salesTotal) * 100).toFixed(1) : "38.5";
 
     return [
-      { title: "Total Sales", value: `$${salesTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, change: "+14.6%", type: "sales", icon: "ShoppingBag", color: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
+      { title: "Total Sales", value: formatCurrency(salesTotal), change: "+14.6%", type: "sales", icon: "ShoppingBag", color: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
       { title: "Total Medicines", value: totalMeds.toString(), change: "+5.2%", type: "medicines", icon: "Pill", color: "bg-indigo-50 text-indigo-700 border border-indigo-100" },
       { title: "Low Stock Items", value: lowStockCount.toString(), change: lowStockCount > 3 ? "Alert" : "-2.0%", type: "low-stock", icon: "AlertTriangle", color: lowStockCount > 2 ? "bg-rose-50 text-rose-700 font-extrabold border border-rose-200 animate-pulse" : "bg-amber-50 text-amber-700 border border-amber-100" },
       { title: "Expiring Soon", value: expiringCount.toString(), change: "-1.5%", type: "expiring", icon: "Calendar", color: expiringCount > 1 ? "bg-red-50 text-red-750 font-bold border border-red-200" : "bg-rose-50 text-rose-700 border border-rose-100" },
-      { title: "Total Profit", value: `$${profitTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, change: "+16.8%", type: "profit", icon: "DollarSign", color: "bg-emerald-100 text-emerald-800 border border-emerald-200" },
+      { title: "Total Profit", value: formatCurrency(profitTotal), change: "+16.8%", type: "profit", icon: "DollarSign", color: "bg-emerald-100 text-emerald-800 border border-emerald-200" },
       { title: "Net Profit Margin", value: `${marginPct}%`, change: "+1.5%", type: "profit-margin", icon: "Percent", color: "bg-purple-50 text-purple-700 border border-purple-100" },
     ];
-  }, [inventory, ordersState, user]);
+  }, [inventory, ordersState, user, formatCurrency]);
 
   useEffect(() => {
     if (user?.role === 'SaaS Super Admin') {
@@ -312,7 +344,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-main text-text-main pb-16 md:pb-0">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-bg-main text-text-main pb-16 md:pb-0 flex flex-col">
             <BarcodeScannerModal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScan={console.log} />
             <BulkInventoryUpdateModal isOpen={isBulkOpen} onClose={() => setIsBulkOpen(false)} />
             <ExpiryUpdateModal isOpen={isExpiryOpen} onClose={() => setIsExpiryOpen(false)} />
@@ -329,7 +361,14 @@ function AppContent() {
                 setIsScannerOpen={setIsScannerOpen}
                 setIsExpiryOpen={setIsExpiryOpen}
                 isSidebarOpen={isSidebarOpen}
-                toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                toggleSidebar={() => {
+                  console.log("Toggling sidebar, current state:", isSidebarOpen);
+                  setIsSidebarOpen(!isSidebarOpen);
+                }}
+                orders={ordersState}
+                inventory={inventory}
+                setInventory={setInventory}
+                setOrders={setOrdersState}
               />
             ) : (
               <>
@@ -338,7 +377,7 @@ function AppContent() {
 
                 <TopHeader onOpenSettings={() => setIsSettingsOpen(true)} activeTab={activeTab} />
                 
-                <main className="ml-0 md:ml-64 pt-28 p-4 md:p-8">
+                <main className="ml-0 md:ml-64 pt-28 p-4 md:p-8 md:h-screen md:overflow-y-auto pb-24">
                   <div className="mb-6">
                     <h1 className="text-2xl font-bold tracking-tight text-[#0c443c]">{activeTab}</h1>
                     <p className="text-gray-500 text-xs font-semibold mt-1">
@@ -382,7 +421,7 @@ function AppContent() {
                     </div>
                   )}
 
-                  <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
+                  <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-3 xl:grid-cols-6 mb-8">
                     {dynamicKpiCards.map((card, idx) => (
                       <motion.div key={idx} variants={itemVariants}>
                         <KpiCard {...card} />
@@ -416,13 +455,15 @@ function AppContent() {
                       </ErrorBoundary>
                     </motion.div>
                     <motion.div variants={itemVariants} className="md:col-span-4">
-                      <SuppliersTable />
+                      <SuppliersTable compact={true} />
                     </motion.div>
-                    <motion.div variants={itemVariants} className="md:col-span-12">
+
+                    <motion.div variants={itemVariants} className="md:col-span-8 flex flex-col gap-6">
+                      <QuickActions 
+                        onExpiryUpdate={() => setIsExpiryOpen(true)} 
+                        onNewPurchaseInvoiceOpen={() => setIsPurchaseOpen(true)}
+                      />
                       <ActivityLogs />
-                    </motion.div>
-                    <motion.div variants={itemVariants} className="md:contents">
-                      <QuickActions onExpiryUpdate={() => setIsExpiryOpen(true)} />
                     </motion.div>
                   </motion.div>
                 </>
@@ -434,8 +475,8 @@ function AppContent() {
               {activeTab === 'Inventory' && checkPermission('viewInventory', 'Inventory', (
                 <InventoryPage inventory={inventory} setInventory={setInventory} />
               ))}
-              {activeTab === 'Sales / Billing' && checkPermission('posCheckout', 'Sales / Billing', (
-                <SalesInterface inventory={inventory} setInventory={setInventory} orders={ordersState} setOrders={setOrdersState} />
+              {activeTab === 'Sales / Billing / Returns' && checkPermission('posCheckout', 'Sales / Billing / Returns', (
+                <SalesModulePage inventory={inventory} setInventory={setInventory} orders={ordersState} setOrders={setOrdersState} />
               ))}
               {activeTab === 'Purchases' && checkPermission('viewInventory', 'Purchases', (
                 <PurchaseManagementPage inventory={inventory} setInventory={setInventory} />
@@ -452,7 +493,7 @@ function AppContent() {
               {activeTab === 'SaaS Super Admin' && <SaaSSuperAdminPage />}
               {activeTab === 'Enterprise Core Hub' && <EnterpriseHub />}
               
-              {activeTab !== 'Dashboard' && activeTab !== 'Enterprise Core Hub' && activeTab !== 'Reports' && activeTab !== 'Medicines' && activeTab !== 'Inventory' && activeTab !== 'Sales / Billing' && activeTab !== 'Purchases' && activeTab !== 'Suppliers' && activeTab !== 'Customers' && activeTab !== 'Expenses' && activeTab !== 'Analytics' && activeTab !== 'Database Sync' && activeTab !== 'Batch Tracking' && activeTab !== 'Staff Management' && activeTab !== 'Subscription' && activeTab !== 'Notifications' && activeTab !== 'Settings' && activeTab !== 'SaaS Super Admin' && (
+              {activeTab !== 'Dashboard' && activeTab !== 'Enterprise Core Hub' && activeTab !== 'Reports' && activeTab !== 'Medicines' && activeTab !== 'Inventory' && activeTab !== 'Sales / Billing / Returns' && activeTab !== 'Purchases' && activeTab !== 'Suppliers' && activeTab !== 'Customers' && activeTab !== 'Expenses' && activeTab !== 'Analytics' && activeTab !== 'Database Sync' && activeTab !== 'Batch Tracking' && activeTab !== 'Staff Management' && activeTab !== 'Subscription' && activeTab !== 'Notifications' && activeTab !== 'Settings' && activeTab !== 'SaaS Super Admin' && (
                 <div className="bg-white p-12 rounded-2xl shadow-sm text-center border border-gray-100">
                   <h2 className="text-xl font-bold text-gray-800 mb-2">{activeTab} Section</h2>
                   <p className="text-sm text-gray-500 mb-6">This section is under construction.</p>
@@ -469,6 +510,7 @@ function AppContent() {
               </>
             )}
             <SyncIndicator />
+            <AiAssistant />
           </div>
   );
 }
@@ -480,7 +522,9 @@ export default function App() {
         <ActivityLogProvider>
           <BranchProvider>
             <ThemeProvider>
-              <AppContent />
+              <SettingsProvider>
+                <AppContent />
+              </SettingsProvider>
             </ThemeProvider>
           </BranchProvider>
         </ActivityLogProvider>

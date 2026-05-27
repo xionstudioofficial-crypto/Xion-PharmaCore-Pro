@@ -1,10 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useCurrency } from "@/src/hooks/useCurrency";
 import { 
   Plus, Search, Edit2, Trash2, Check, AlertCircle, ShoppingCart, 
   User, Calendar, DollarSign, UploadCloud, FileText, CheckCircle2, 
-  Trash, ArrowUpDown, RefreshCw, Layers, ShieldCheck, ChevronRight, Play, Eye
+  Trash, ArrowUpDown, RefreshCw, Layers, ShieldCheck, ChevronRight, Play, Eye, QrCode
 } from "lucide-react";
+import { InteractiveQRScannerModal } from "@/src/components/InteractiveQRScannerModal";
 
 interface Medicine {
   id: string;
@@ -74,7 +76,41 @@ const PRESETS_MEDS = [
   "Nexium Acid Block 40mg"
 ];
 
+const SUPPLIER_MEDS_MAPPING: Record<string, { name: string; costPrice: number; barcode: string }[]> = {
+  "PharmaCorp Inc.": [
+    { name: "Panadol Extra 500mg", costPrice: 2.80, barcode: "QR-PANADOL-500" },
+    { name: "Amoxil Forte 250mg", costPrice: 6.50, barcode: "QR-AMOXIL-250" },
+    { name: "Surbex Z Multivitamins", costPrice: 4.20, barcode: "QR-SURBEX-Z" }
+  ],
+  "MediSupply Ltd.": [
+    { name: "Zyrtec Allergy 10mg", costPrice: 1.90, barcode: "QR-ZYRTEC-10" },
+    { name: "Lipitor Lipids 20mg", costPrice: 8.50, barcode: "QR-LIPITOR-20" },
+    { name: "Crestor Cholesterol 10mg", costPrice: 9.10, barcode: "QR-CRESTOR-10" }
+  ],
+  "GlaxoSmithKline Wholesale": [
+    { name: "Ventolin Inhaler 100mcg", costPrice: 12.00, barcode: "QR-VENTOLIN-100" },
+    { name: "Augmentin Tablets 625mg", costPrice: 14.50, barcode: "QR-AUGMENTIN-625" },
+    { name: "Panadol Extra 500mg", costPrice: 2.80, barcode: "QR-PANADOL-500" }
+  ],
+  "PharmaDist Corp": [
+    { name: "Nexium Acid Block 40mg", costPrice: 5.20, barcode: "QR-NEXIUM-40" },
+    { name: "Disprin Tablets 300mg", costPrice: 0.90, barcode: "QR-DISPRIN-300" },
+    { name: "Brufen Cream 400mg", costPrice: 3.50, barcode: "QR-BRUFEN-400" }
+  ],
+  "BioPharma Solutions": [
+    { name: "Insulin Humalog Injection", costPrice: 45.00, barcode: "QR-INSULIN-HUMA" },
+    { name: "Rocephin IV Injection 1g", costPrice: 22.00, barcode: "QR-ROCEPHIN-1G" },
+    { name: "SoluMedrol 2ml", costPrice: 18.00, barcode: "QR-SOLUMED-2ML" }
+  ],
+  "MedSource Logistics": [
+    { name: "Arinac Forte Flu Relief", costPrice: 3.80, barcode: "QR-ARINAC-FTE" },
+    { name: "Flagyl Tablets 400mg", costPrice: 2.10, barcode: "QR-FLAGYL-400" },
+    { name: "Loprin 75mg Cardioprev", costPrice: 1.50, barcode: "QR-LOPRIN-75" }
+  ]
+};
+
 export function PurchaseManagementPage({ inventory, setInventory }: PurchaseManagementPageProps) {
+  const { formatCurrency, symbol } = useCurrency();
   // Initial demo purchase orders
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([
     {
@@ -139,6 +175,80 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
   const [poItems, setPoItems] = useState<PurchaseItem[]>([
     { name: PRESETS_MEDS[0], quantity: 50, costPrice: 2.50 }
   ]);
+
+  // QR Scanning and Custom Selection States
+  const [selectedMedicineName, setSelectedMedicineName] = useState("");
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
+  const [scanningContext, setScanningContext] = useState<"create" | "delivery">("create");
+
+  // Reset selected medicine when supplier changes during PO draft
+  useEffect(() => {
+    setSelectedMedicineName("");
+  }, [supplierName]);
+
+  // Handle scanned/appended items
+  const handleScanMedicine = (scanned: { name: string; costPrice?: number; barcode: string }) => {
+    const cost = scanned.costPrice || 2.50;
+    if (scanningContext === "create") {
+      setPoItems(prev => {
+        const exists = prev.find(item => item.name.toLowerCase() === scanned.name.toLowerCase());
+        if (exists) {
+          return prev.map(item => item.name.toLowerCase() === scanned.name.toLowerCase() ? { ...item, quantity: item.quantity + 100 } : item);
+        } else {
+          return [...prev, { name: scanned.name, quantity: 100, costPrice: cost }];
+        }
+      });
+    } else if (scanningContext === "delivery" && selectedPO) {
+      const updatedItems = [...selectedPO.items];
+      const matchIndex = updatedItems.findIndex(item => item.name.toLowerCase() === scanned.name.toLowerCase());
+      
+      if (matchIndex >= 0) {
+        updatedItems[matchIndex] = {
+          ...updatedItems[matchIndex],
+          quantity: updatedItems[matchIndex].quantity + 100
+        };
+      } else {
+        updatedItems.push({
+          name: scanned.name,
+          quantity: 100,
+          costPrice: cost
+        });
+      }
+
+      const nextSubtotal = updatedItems.reduce((acc, it) => acc + (it.quantity * it.costPrice), 0);
+      const nextTax = nextSubtotal * 0.05;
+      const nextTotal = nextSubtotal + nextTax;
+
+      const updatedPO: PurchaseOrder = {
+        ...selectedPO,
+        items: updatedItems,
+        subtotal: nextSubtotal,
+        tax: nextTax,
+        total: nextTotal
+      };
+
+      setPurchaseOrders(prev => prev.map(po => po.id === selectedPO.id ? updatedPO : po));
+      setSelectedPO(updatedPO);
+    }
+  };
+
+  // Handler for adding chosen medicine from relational dropdown
+  const handleAddMedicineFromSelect = () => {
+    if (!selectedMedicineName) return;
+    const medsForSupplier = SUPPLIER_MEDS_MAPPING[supplierName] || [];
+    const match = medsForSupplier.find(m => m.name === selectedMedicineName);
+    if (match) {
+      setPoItems(prev => {
+        const exists = prev.find(item => item.name === match.name);
+        if (exists) {
+          return prev.map(item => item.name === match.name ? { ...item, quantity: item.quantity + 50 } : item);
+        } else {
+          return [...prev, { name: match.name, quantity: 50, costPrice: match.costPrice }];
+        }
+      });
+      setSelectedMedicineName("");
+    }
+  };
 
   // Invoice file upload simulator states
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -496,11 +606,11 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                     <div className="flex justify-between items-end border-t border-gray-50 pt-3 text-xs font-mono">
                       <div>
                         <p className="text-gray-400 font-sans text-[10px]">Settled Balance</p>
-                        <p className="font-semibold text-gray-600">${totalPaid.toFixed(2)} / ${po.total.toFixed(2)}</p>
+                        <p className="font-semibold text-gray-600">{formatCurrency(totalPaid)} / {formatCurrency(po.total)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-gray-400 font-sans text-[10px]">Due Balance</p>
-                        <p className="font-black text-rose-600">${Math.max(0, po.total - totalPaid).toFixed(2)}</p>
+                        <p className="font-black text-rose-600">{formatCurrency(Math.max(0, po.total - totalPaid))}</p>
                       </div>
                     </div>
 
@@ -542,12 +652,25 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
 
                   {/* Status update switcher */}
                   {selectedPO.status !== "Completed" && (
-                    <button 
-                      onClick={() => markAsReceived(selectedPO)}
-                      className="bg-gradient-to-r from-emerald-800 to-emerald-700 text-white font-extrabold text-[11px] px-4 py-2.5 rounded-xl hover:brightness-110 active:scale-95 transition tracking-widest uppercase flex items-center gap-1"
-                    >
-                      <Check className="w-4 h-4" /> Received & Stock Sync
-                    </button>
+                    <div className="flex gap-2 self-stretch sm:self-auto">
+                      <button
+                        onClick={() => {
+                          setScanningContext("delivery");
+                          setIsQrScannerOpen(true);
+                        }}
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] px-4 py-2.5 rounded-xl active:scale-95 transition tracking-widest uppercase flex items-center gap-1.5 border border-slate-800 shrink-0"
+                        title="Scan arrival barcode / QR key to match delivery formulation"
+                      >
+                        <QrCode className="w-4 h-4 text-emerald-450 animate-pulse" /> Scan Arrived QR
+                      </button>
+
+                      <button 
+                        onClick={() => markAsReceived(selectedPO)}
+                        className="bg-gradient-to-r from-emerald-800 to-emerald-700 text-white font-extrabold text-[11px] px-4 py-2.5 rounded-xl hover:brightness-110 active:scale-95 transition tracking-widest uppercase flex items-center gap-1 whitespace-nowrap"
+                      >
+                        <Check className="w-4 h-4" /> Received & Stock Sync
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -565,14 +688,14 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                       <div key={index} className="grid grid-cols-12 gap-2 text-gray-700 font-bold">
                         <span className="col-span-6 text-gray-900 truncate">{item.name}</span>
                         <span className="col-span-3 text-center font-mono">{item.quantity} Units</span>
-                        <span className="col-span-3 text-right font-mono">${item.costPrice.toFixed(2)}</span>
+                        <span className="col-span-3 text-right font-mono">{formatCurrency(item.costPrice)}</span>
                       </div>
                     ))}
 
                     <div className="border-t border-gray-200 pt-3 space-y-1 text-right text-gray-500 font-bold">
-                      <p>Subtotal: ${selectedPO.subtotal.toFixed(2)}</p>
-                      <p>Regulatory Tax (5%): ${selectedPO.tax.toFixed(2)}</p>
-                      <p className="text-xs font-black text-emerald-800 border-t border-dashed border-gray-200 pt-1.5 mt-1">Invoice Grand Total: ${selectedPO.total.toFixed(2)}</p>
+                      <p>Subtotal: {formatCurrency(selectedPO.subtotal)}</p>
+                      <p>Regulatory Tax (5%): {formatCurrency(selectedPO.tax)}</p>
+                      <p className="text-xs font-black text-emerald-800 border-t border-dashed border-gray-200 pt-1.5 mt-1">Invoice Grand Total: {formatCurrency(selectedPO.total)}</p>
                     </div>
                   </div>
                 </div>
@@ -648,7 +771,7 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                                 <p className="text-gray-800">{trStatus.method}</p>
                                 <p className="text-[9px] text-gray-400 mt-0.5">Date: {trStatus.date}</p>
                               </div>
-                              <span className="text-emerald-800 font-mono">+${trStatus.amount.toFixed(2)}</span>
+                              <span className="text-emerald-800 font-mono">+{formatCurrency(trStatus.amount)}</span>
                             </div>
                           ))}
                         </div>
@@ -666,7 +789,7 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                               type="number" 
                               required
                               step="0.01"
-                              placeholder="Amount ($)..."
+                              placeholder={`Amount (${symbol})...`}
                               value={trialPaymentAmount}
                               onChange={e => setTrialPaymentAmount(e.target.value)}
                               className="w-1/2 p-2 px-2.5 text-xs border border-gray-200 bg-white rounded-xl focus:ring-1 focus:ring-emerald-700 outline-none font-bold"
@@ -752,6 +875,37 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                     </select>
                   </div>
 
+                  {/* Company Medicine Dropdown (Provided medicines list) */}
+                  <div className="space-y-1 sm:col-span-2 bg-[#1F7A5A]/5 border border-[#1F7A5A]/15 p-3.5 rounded-2xl">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[10px] font-black text-[#1F7A5A] uppercase tracking-wider">
+                        Company's Provided Medicines Dropdown
+                      </label>
+                      <span className="text-[9px] text-[#1F7A5A] font-bold bg-[#1F7A5A]/10 px-2.5 py-0.5 rounded">Select & Add</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedMedicineName}
+                        onChange={e => setSelectedMedicineName(e.target.value)}
+                        className="flex-1 text-xs p-2.5 border border-gray-300 bg-white rounded-xl outline-none focus:ring-1 focus:ring-emerald-700 cursor-pointer font-bold"
+                      >
+                        <option value="">-- Choose Medicine from {supplierName} --</option>
+                        {(SUPPLIER_MEDS_MAPPING[supplierName] || []).map(m => (
+                          <option key={m.name} value={m.name}>
+                            {m.name} (Suggested cost: {symbol}{m.costPrice.toFixed(2)})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAddMedicineFromSelect}
+                        className="bg-[#1F7A5A] hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-sm active:scale-95 shrink-0"
+                      >
+                        Add to List
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Order Date */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-450 uppercase">Order Date *</label>
@@ -791,13 +945,26 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                 <div className="space-y-3.5 pt-2">
                   <div className="flex justify-between items-center">
                     <h4 className="font-extrabold text-[11px] text-gray-500 uppercase tracking-widest">Requisition formulation items</h4>
-                    <button 
-                      type="button" 
-                      onClick={addFormLineItem}
-                      className="text-[10px] text-emerald-800 font-black hover:underline flex items-center gap-1.5 uppercase"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Append item row
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScanningContext("create");
+                          setIsQrScannerOpen(true);
+                        }}
+                        className="text-[10px] bg-[#1F7A5A]/5 border border-[#1F7A5A]/15 text-[#1F7A5A] px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 hover:bg-[#1F7A5A]/10 transition uppercase tracking-wider"
+                      >
+                        <QrCode className="w-3.5 h-3.5 animate-pulse text-[#1F7A5A]" /> Scan QR code to add
+                      </button>
+
+                      <button 
+                        type="button" 
+                        onClick={addFormLineItem}
+                        className="text-[10px] text-emerald-800 font-black hover:underline flex items-center gap-1.5 uppercase"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Append item row
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
@@ -836,7 +1003,7 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                             required
                             step="0.01"
                             min="0.1"
-                            placeholder="Cost ($)..."
+                            placeholder={`Cost (${symbol})...`}
                             value={item.costPrice}
                             onChange={e => updateFormLineField(index, "costPrice", parseFloat(e.target.value) || 0)}
                             className="w-full text-xs p-2 bg-white border border-gray-200 rounded-lg outline-none text-right font-bold"
@@ -899,9 +1066,9 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
                   <div className="flex justify-between items-center text-xs font-bold pt-3 border-t border-gray-105 border-dashed font-mono">
                     <span className="text-gray-400 uppercase font-sans text-[10px]">Estimated Invoice totals</span>
                     <div className="text-right">
-                      <p className="text-gray-500">Subtotal: ${formSubtotal.toFixed(2)}</p>
-                      <p className="text-gray-500">VAT (5%): ${formTax.toFixed(2)}</p>
-                      <p className="text-emerald-800 text-sm font-black mt-0.5 border-t border-gray-100 pt-1">Estimated Grand Total: ${formTotal.toFixed(2)}</p>
+                      <p className="text-gray-500">Subtotal: {formatCurrency(formSubtotal)}</p>
+                      <p className="text-gray-500">VAT (5%): {formatCurrency(formTax)}</p>
+                      <p className="text-emerald-800 text-sm font-black mt-0.5 border-t border-gray-100 pt-1">Estimated Grand Total: {formatCurrency(formTotal)}</p>
                     </div>
                   </div>
                 </div>
@@ -928,6 +1095,26 @@ export function PurchaseManagementPage({ inventory, setInventory }: PurchaseMana
           </div>
         )}
       </AnimatePresence>
+
+      <InteractiveQRScannerModal
+        isOpen={isQrScannerOpen}
+        onClose={() => setIsQrScannerOpen(false)}
+        onScan={handleScanMedicine}
+        supplierName={scanningContext === "create" ? supplierName : (selectedPO?.supplierName || "Selected Company")}
+        availableMeds={
+          (SUPPLIER_MEDS_MAPPING[scanningContext === "create" ? supplierName : (selectedPO?.supplierName || "")] || []).map(m => ({
+            name: m.name,
+            barcode: m.barcode,
+            costPrice: m.costPrice
+          }))
+        }
+        title={scanningContext === "create" ? "PO Requisition Code Scanner" : "Arrived Delivery Code Receiver"}
+        description={
+          scanningContext === "create"
+            ? "Scan package labels to add drugs in bulk directly to this active requisition draft."
+            : "Scan arrived package QR labels. Quantities will automatically increment or append to the purchase ledger details."
+        }
+      />
 
     </div>
   );

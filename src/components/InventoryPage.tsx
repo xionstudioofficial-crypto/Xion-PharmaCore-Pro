@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Plus, Search, Edit2, Filter, ChevronDown, Check, AlertTriangle, 
-  Package, Calendar, HelpCircle, ArrowUpDown, User, RefreshCw, Layers, Sparkles
+  Package, Calendar, HelpCircle, ArrowUpDown, User, RefreshCw, Layers, Sparkles, Download
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { StockCategoryChart } from "./StockCategoryChart";
 
 interface Medicine {
   id: string;
@@ -46,6 +48,8 @@ const CATEGORIES = [
 ];
 
 export function InventoryPage({ inventory, setInventory }: InventoryPageProps) {
+  const { user } = useAuth();
+
   // Advanced filters state
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -157,6 +161,64 @@ export function InventoryPage({ inventory, setInventory }: InventoryPageProps) {
     return sortOrder === "asc" ? result : -result;
   });
 
+  // Export full inventory list to CSV for supplier auditing and offline reporting
+  const exportToCSV = () => {
+    const headers = [
+      "ID",
+      "Medicine Name",
+      "Generic Formulation",
+      "Category",
+      "Batch Number",
+      "Expiry Date",
+      "Current Stock",
+      "Purchase Price ($)",
+      "Retail Price ($)",
+      "Wholesale Supplier",
+      "Barcode"
+    ];
+
+    const rows = inventory.map(med => {
+      const supplierName = med.supplier || getSupplierForItem(med);
+      return [
+        med.id,
+        med.name,
+        med.genericName || "N/A",
+        med.category || "N/A",
+        med.batchNumber || "N/A",
+        med.expiryDate || "N/A",
+        med.stock.toString(),
+        med.purchasePrice !== undefined ? med.purchasePrice.toFixed(2) : "0.00",
+        med.price.toFixed(2),
+        supplierName,
+        med.barcode || "N/A"
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => 
+        row.map(val => {
+          const escaped = val.replace(/"/g, '""');
+          return `"${escaped}"`;
+        }).join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    const clientNameClean = (user?.client?.name || "pharmacy").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `pharmascript_inventory_${clientNameClean}_${dateStr}.csv`);
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 15 }} 
@@ -213,6 +275,9 @@ export function InventoryPage({ inventory, setInventory }: InventoryPageProps) {
           </div>
         </div>
       </div>
+
+      {/* 1.5. Stock Levels Classification Chart */}
+      <StockCategoryChart inventory={inventory} />
 
       {/* 2. Advanced Search & Double-Filtering Ribbon */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
@@ -326,6 +391,25 @@ export function InventoryPage({ inventory, setInventory }: InventoryPageProps) {
 
       {/* 3. Real Inventory Table with Stock indicators & Batch Tracking columns */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden whitespace-nowrap">
+        {/* Table Title Toolbar with Premium CSV Export action */}
+        <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50 whitespace-normal">
+          <div>
+            <h3 className="font-extrabold text-[#0c443c] text-sm tracking-wide">Stock Registry</h3>
+            <p className="text-xs text-gray-400 mt-0.5 font-medium">
+              Showing {sortedInventory.length} of {inventory.length} audited formulations
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+               id="btn-export-csv"
+               onClick={exportToCSV}
+               className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-850 text-white font-extrabold px-4 py-2.5 rounded-2xl shadow-xs hover:shadow-md transition duration-200 flex items-center justify-center gap-2 text-xs cursor-pointer active:scale-95"
+            >
+               <Download className="w-4 h-4" />
+               <span>Export Inventory (CSV)</span>
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

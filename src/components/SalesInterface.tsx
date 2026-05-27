@@ -6,6 +6,8 @@ import {
   User, Phone, ShoppingCart, HelpCircle, AlertCircle, CheckCircle2, X
 } from "lucide-react";
 
+import { useCurrency } from "@/src/hooks/useCurrency";
+
 interface Medicine {
   id: string;
   name: string;
@@ -40,6 +42,7 @@ const VIP_CUSTOMERS = [
 ];
 
 export function SalesInterface({ inventory, setInventory, orders = [], setOrders }: SalesInterfaceProps) {
+  const { formatCurrency, symbol } = useCurrency();
   // POS Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customer, setCustomer] = useState({ name: '', phone: '', points: 0 });
@@ -92,6 +95,16 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cart, customer, globalDiscount, paymentMethod, inventory]);
+
+  // Automatically trigger printer dialog if autoPrintOnSale is checked in PrintPreviewModal
+  useEffect(() => {
+    if (showInvoiceModal && localStorage.getItem('autoPrintOnSale') === 'true') {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [showInvoiceModal]);
 
   // Quick simulate direct UPC barcode scan matching
   const triggerMockBarcodeScan = () => {
@@ -244,7 +257,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
       id: invoiceNumber,
       customer: customer.name || "Walk-in Customer",
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      amount: `$${totalAmountDue.toFixed(2)}`,
+      amount: formatCurrency(totalAmountDue),
       status: "Completed" as const,
       items: cart.map(item => ({
         id: item.id,
@@ -459,7 +472,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
                       </div>
                       <div className="text-right">
                         <p className="text-gray-400">Retail Unit</p>
-                        <p className="font-extrabold text-emerald-800">${med.price.toFixed(2)}</p>
+                        <p className="font-extrabold text-emerald-800">{formatCurrency(med.price)}</p>
                       </div>
                     </div>
 
@@ -551,7 +564,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
                   <div key={item.id} className="p-3 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center justify-between gap-3 text-xs">
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-800 truncate">{item.name}</p>
-                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">${item.price.toFixed(2)}/unit</p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">{formatCurrency(item.price)}/unit</p>
                     </div>
 
                     {/* Quantity Selector buttons */}
@@ -587,7 +600,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
 
                     {/* Line total result */}
                     <div className="text-right min-w-[62px]">
-                      <span className="font-extrabold text-gray-800 font-mono">${lineTotal.toFixed(2)}</span>
+                      <span className="font-extrabold text-gray-800 font-mono">{formatCurrency(lineTotal)}</span>
                     </div>
 
                     {/* Delete Line */}
@@ -636,21 +649,21 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
               <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-100/30 text-xs font-semibold space-y-2 font-mono text-gray-600">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Healthcare Tax (5%):</span>
-                  <span>+${taxAmount.toFixed(2)}</span>
+                  <span>+{formatCurrency(taxAmount)}</span>
                 </div>
                 {globalDiscount > 0 && (
                   <div className="flex justify-between text-rose-600 font-bold">
                     <span>Global Discount ({globalDiscount}%):</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span>-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-gray-800 border-t border-gray-100 pt-2 font-bold text-sm">
                   <span>Grand Total Due:</span>
-                  <span className="text-emerald-800">${totalAmountDue.toFixed(2)}</span>
+                  <span className="text-emerald-800">{formatCurrency(totalAmountDue)}</span>
                 </div>
               </div>
 
@@ -694,7 +707,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
               {/* Cash Paid input drawer to calculate return tender balance change */}
               {paymentMethod === "Cash" && (
                 <div className="flex gap-3 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100/50 items-center justify-between text-xs">
-                  <span className="font-bold text-emerald-800">Cash Received ($) :</span>
+                  <span className="font-bold text-emerald-800">Cash Received ({symbol}) :</span>
                   <input 
                     type="text" 
                     placeholder="Enter amount..."
@@ -704,7 +717,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
                   />
                   {parseFloat(cashAmountPaid) >= totalAmountDue && (
                     <span className="font-bold text-[10px] bg-emerald-100 p-1 rounded font-mono text-emerald-800">
-                      Change: ${(parseFloat(cashAmountPaid) - totalAmountDue).toFixed(2)}
+                      Change: {formatCurrency(parseFloat(cashAmountPaid) - totalAmountDue)}
                     </span>
                   )}
                 </div>
@@ -828,7 +841,7 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
                 {invoiceForReceipt.items.map((it: any) => (
                   <div key={it.id} className="flex justify-between">
                     <span className="font-bold truncate max-w-[190px]">{it.name}</span>
-                    <span className="text-right">{it.quantity} x ${it.price.toFixed(2)}</span>
+                    <span className="text-right">{it.quantity} x {formatCurrency(it.price)}</span>
                   </div>
                 ))}
               </div>
@@ -837,21 +850,21 @@ export function SalesInterface({ inventory, setInventory, orders = [], setOrders
               <div className="w-full py-3 text-xs font-mono text-gray-800 space-y-1 pb-4">
                 <div className="flex justify-between text-[11px]">
                   <span>Subtotal:</span>
-                  <span>${invoiceForReceipt.subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(invoiceForReceipt.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-[11px]">
                   <span>Taxes (5%):</span>
-                  <span>+${invoiceForReceipt.tax.toFixed(2)}</span>
+                  <span>+{formatCurrency(invoiceForReceipt.tax)}</span>
                 </div>
                 {invoiceForReceipt.discount > 0 && (
                   <div className="flex justify-between text-rose-600 text-[11px] font-bold">
                     <span>Campaign Discount:</span>
-                    <span>-${(invoiceForReceipt.subtotal * invoiceForReceipt.discount / 100).toFixed(2)}</span>
+                    <span>-{formatCurrency(invoiceForReceipt.subtotal * invoiceForReceipt.discount / 100)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-black text-gray-900 text-sm border-t border-dashed border-gray-200 pt-2 font-mono">
                   <span>PAID GRAND TOTAL:</span>
-                  <span className="text-emerald-800">${invoiceForReceipt.total.toFixed(2)}</span>
+                  <span className="text-emerald-800">{formatCurrency(invoiceForReceipt.total)}</span>
                 </div>
               </div>
 

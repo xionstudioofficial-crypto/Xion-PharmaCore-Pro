@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Download, Printer } from "lucide-react";
 import { useState } from "react";
 import { PrintPreviewModal } from "./PrintPreviewModal";
+import { useCurrency } from "@/src/hooks/useCurrency";
 
 interface OrdersTableProps {
   orders?: any[];
@@ -12,6 +13,7 @@ interface OrdersTableProps {
 export function OrdersTable({ orders: propOrders }: OrdersTableProps) {
   const [printingOrder, setPrintingOrder] = useState<any>(null);
   const displayOrders = propOrders || DEFAULT_ORDERS;
+  const { formatCurrency } = useCurrency();
 
   return (
     <motion.div
@@ -55,7 +57,7 @@ export function OrdersTable({ orders: propOrders }: OrdersTableProps) {
                   >
                     <td className="p-4 align-middle font-mono text-xs font-bold text-[#0c443c]">{order.id}</td>
                     <td className="p-4 align-middle font-semibold text-slate-700">{order.customer}</td>
-                    <td className="p-4 align-middle font-bold text-slate-800 font-mono">{order.amount}</td>
+                    <td className="p-4 align-middle font-bold text-slate-800 font-mono">{formatCurrency(order.amount)}</td>
                     <td className="p-4 align-middle">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                         order.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 

@@ -79,8 +79,26 @@ export function SalesChart({ orders = [] }: SalesChartProps) {
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
               <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px' }} />
-              <Bar dataKey="sales" name="Gross Sales ($)" fill="#047857" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="profit" name="Net Profits ($)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              <Bar 
+                dataKey="sales" 
+                name="Gross Sales ($)" 
+                fill="#047857" 
+                radius={[4, 4, 0, 0]} 
+                isAnimationActive={true}
+                animationDuration={1200}
+                animationBegin={100}
+                animationEasing="ease-out"
+              />
+              <Bar 
+                dataKey="profit" 
+                name="Net Profits ($)" 
+                fill="#f59e0b" 
+                radius={[4, 4, 0, 0]} 
+                isAnimationActive={true}
+                animationDuration={1500}
+                animationBegin={300}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

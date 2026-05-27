@@ -29,12 +29,12 @@ export function Sidebar({ activeTab, setActiveTab, onOpenSettings, isOpen = true
   return (
     <>
       <div className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
-      <div className={`w-64 bg-[#09352F] text-white flex-col h-screen fixed left-0 top-0 z-50 shadow-lg transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:flex`}>
+      <div className={`w-64 bg-[#09352F] text-white flex flex-col h-screen fixed left-0 top-0 z-50 shadow-lg transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 overflow-y-auto md:overflow-hidden overscroll-contain no-scrollbar`}>
         <div className="p-6">
           <h1 className="text-2xl font-bold text-white">PharmaPlus</h1>
           <p className="text-[#A7D129] text-sm">Pharmacy Management</p>
         </div>
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-visible md:overflow-y-auto no-scrollbar overscroll-contain">
           {displayItems.map((item) => (
             <a
               key={item.name}

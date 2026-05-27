@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useCurrency } from "@/src/hooks/useCurrency";
 import { 
   TrendingUp, TrendingDown, DollarSign, BarChart3, PieChart, LineChart as LucideLineChart, 
   Download, Printer, FileText, Layers, ShoppingBag, Truck, Calendar, 
@@ -125,6 +126,21 @@ const EXPENSE_REPORT_DATA: ExpenseSummaryRef[] = [
   { id: "EXP-9271", category: "Hazardous bio-disposal", amount: 320.00, frequency: "Bi-Monthly", paymentDate: "2026-05-15", referenceNotes: "Bio-contaminations discard logistics" }
 ];
 
+const RETURN_TRENDS_CHART = [
+  { month: "Jan", volume: 12 },
+  { month: "Feb", volume: 8 },
+  { month: "Mar", volume: 15 },
+  { month: "Apr", volume: 10 },
+  { month: "May", volume: 5 }
+];
+
+const RETURN_REASONS_CHART = [
+  { name: "Damaged Items", value: 18, color: "#f43f5e" },
+  { name: "Expired Meds", value: 25, color: "#eab308" },
+  { name: "Customer Recall", value: 8, color: "#3b82f6" },
+  { name: "Supplier Defect", value: 12, color: "#8b5cf6" }
+];
+
 const SUPPLIER_PERFORMANCE_DATA: SupplierPerformanceRef[] = [
   { id: "SUP-A", supplierName: "PharmaCorp Wholesales", totalOrders: 21, purchaseVolumeVal: 8450.00, fulfillmentRate: 98.4, avgLeadTimeDays: 2.1, duesAmount: 1250.00 },
   { id: "SUP-B", supplierName: "MediSupply Distribution Ltd.", totalOrders: 14, purchaseVolumeVal: 4620.00, fulfillmentRate: 95.8, avgLeadTimeDays: 3.4, duesAmount: 450.00 },
@@ -138,8 +154,9 @@ interface ReportsPageProps {
 }
 
 export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
+  const { formatCurrency } = useCurrency();
   // Select active report tab section: "Sales" | "Inventory" | "Profit" | "Expenses" | "Suppliers"
-  const [activeReportTab, setActiveReportTab] = useState<"Sales" | "Inventory" | "Profit" | "Expenses" | "Suppliers">("Sales");
+  const [activeReportTab, setActiveReportTab] = useState<"Sales" | "Inventory" | "Profit" | "Expenses" | "Suppliers" | "Returns">("Sales");
   
   // Custom filter or query limits
   const [searchQuery, setSearchQuery] = useState("");
@@ -287,7 +304,7 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
             <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded">LIVE</span>
           </div>
           <div className="mt-3">
-            <p className="text-lg font-black text-emerald-850 font-mono">${totalSalesVal.toLocaleString()}</p>
+            <p className="text-lg font-black text-emerald-850 font-mono">{formatCurrency(totalSalesVal)}</p>
             <div className="flex items-center gap-1 text-[10px] text-emerald-600 mt-1 font-semibold">
               <TrendingUp className="w-3 h-3" />
               <span>+{growthRatePct}% Growth</span>
@@ -307,7 +324,7 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
             {reorderAlertCount > 0 && <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-black font-mono">ALERT {reorderAlertCount}</span>}
           </div>
           <div className="mt-3">
-            <p className="text-lg font-black text-slate-800 font-mono">${rawAssetVal.toFixed(0)}</p>
+            <p className="text-lg font-black text-slate-800 font-mono">{formatCurrency(rawAssetVal)}</p>
             <p className="text-[10px] text-gray-400 mt-1 font-semibold">Total shelf valuations</p>
           </div>
         </div>
@@ -324,7 +341,7 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
             <span className="text-[9px] bg-teal-50 text-teal-800 px-1 py-0.5 rounded font-black font-mono">41.8%</span>
           </div>
           <div className="mt-3">
-            <p className="text-lg font-black text-teal-850 font-mono">${projectedProfit.toLocaleString()}</p>
+            <p className="text-lg font-black text-teal-850 font-mono">{formatCurrency(projectedProfit)}</p>
             <p className="text-[10px] text-gray-400 mt-1 font-semibold">Q2 Projected Margins</p>
           </div>
         </div>
@@ -341,7 +358,7 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
             <span className="text-[9px] bg-rose-50 text-rose-800 px-1.5 py-0.5 rounded font-black font-mono">Deduction</span>
           </div>
           <div className="mt-3">
-            <p className="text-lg font-black text-rose-955 font-mono">${maxExpensesSum.toLocaleString()}</p>
+            <p className="text-lg font-black text-rose-955 font-mono">{formatCurrency(maxExpensesSum)}</p>
             <p className="text-[10px] text-gray-400 mt-1 font-medium">May payroll & utility sums</p>
           </div>
         </div>
@@ -358,7 +375,7 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
             <span className="text-[9px] bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded font-semibold font-mono">Dues</span>
           </div>
           <div className="mt-3">
-            <p className="text-lg font-black text-amber-900 font-mono">${supplierDuesPayableSum.toLocaleString()}</p>
+            <p className="text-lg font-black text-amber-900 font-mono">{formatCurrency(supplierDuesPayableSum)}</p>
             <p className="text-[10px] text-gray-400 mt-1 font-semibold">Consolidated payables</p>
           </div>
         </div>
@@ -436,6 +453,20 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
           }`}
         >
           <Truck className="w-4 h-4 text-emerald-700" /> Supplier Fulfilment performance
+        </button>
+
+        <button 
+          onClick={() => {
+            setActiveReportTab("Returns");
+            setSearchQuery("");
+          }}
+          className={`px-5 py-3 rounded-2xl text-xs font-black tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+            activeReportTab === "Returns" 
+            ? "bg-white text-emerald-800 shadow shadow-slate-900/40 font-black scale-[1.03]" 
+            : "hover:text-white"
+          }`}
+        >
+          <RefreshCw className="w-4 h-4 text-emerald-700" /> Return Trends
         </button>
 
       </div>
@@ -1043,6 +1074,113 @@ export function ReportsPage({ inventory = [], orders = [] }: ReportsPageProps) {
               </div>
             </div>
 
+          </motion.div>
+        )}
+
+        {/* ========================================= 
+            TAB SECTION F: RETURN TRENDS 
+            ========================================= */}
+        {activeReportTab === "Returns" && (
+          <motion.div 
+            key="returns-report-panel"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="space-y-6"
+          >
+            <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 flex items-center justify-between shadow-xs">
+              <div>
+                <h3 className="text-xl font-black mb-1.5 flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-indigo-400" />
+                  Medicines Return Volatility
+                </h3>
+                <p className="text-sm font-medium text-slate-400">Track and monitor returned merchandise authorizations and waste volumes over time.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+              {/* Trend Chart */}
+              <div className="bg-white rounded-3xl shadow-3xs p-6 lg:p-8 border border-gray-150 min-h-[400px] flex flex-col justify-between">
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-[#09352F] flex items-center gap-2 mb-1.5">
+                    <TrendingUp className="w-3.5 h-3.5" /> Return Volume Trends (6 Months)
+                  </h4>
+                  <p className="text-[10px] text-gray-500 font-medium mb-8">Raw quantity of items returned back into the inventory module across periods.</p>
+                </div>
+                
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={RETURN_TRENDS_CHART}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} dx={-10} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', padding: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        itemStyle={{ color: '#334155', fontWeight: 'bold', fontSize: '12px' }}
+                      />
+                      <Bar dataKey="volume" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Reasons Pie Chart */}
+              <div className="bg-white rounded-3xl shadow-3xs p-6 lg:p-8 border border-gray-150 min-h-[400px] flex flex-col justify-between">
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-[#09352F] flex items-center gap-2 mb-1.5">
+                    <PieChart className="w-3.5 h-3.5" /> Return Reasons Breakdown
+                  </h4>
+                  <p className="text-[10px] text-gray-500 font-medium mb-8">Proportional aggregate composition of reasons why medicines were refunded or revoked.</p>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={RETURN_REASONS_CHART}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={95}
+                        paddingAngle={5}
+                        dataKey="value"
+                        labelLine={false}
+                        label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+                          const RADIAN = Math.PI / 180;
+                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          return (
+                            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={800}>
+                              {value}%
+                            </text>
+                          );
+                        }}
+                      >
+                        {RETURN_REASONS_CHART.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', padding: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 'bold' }}
+                      />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex justify-center gap-5 flex-wrap">
+                    {RETURN_REASONS_CHART.map(reason => (
+                      <div key={reason.name} className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: reason.color }} />
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">{reason.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
 

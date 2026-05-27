@@ -9,7 +9,7 @@ export const navItems = [
   { name: 'Enterprise Core Hub', icon: Cpu },
   { name: 'Medicines', icon: Pill },
   { name: 'Inventory', icon: Package },
-  { name: 'Sales / Billing', icon: ReceiptText },
+  { name: 'Sales / Billing / Returns', icon: ReceiptText },
   { name: 'Purchases', icon: ShoppingCart },
   { name: 'Suppliers', icon: Users },
   { name: 'Customers', icon: User },

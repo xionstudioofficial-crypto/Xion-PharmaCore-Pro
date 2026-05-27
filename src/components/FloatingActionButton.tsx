@@ -11,14 +11,25 @@ export const FloatingActionButton: React.FC<{
 
   return (
     <motion.div
-      className="fixed bottom-8 right-8 z-50 flex flex-col-reverse items-end gap-3"
+      className="fixed bottom-[112px] right-8 z-[9990] flex flex-col-reverse items-end gap-3"
       onHoverStart={() => setIsOpen(true)}
       onHoverEnd={() => setIsOpen(false)}
+      animate={{
+        y: [0, -6, 0]
+      }}
+      transition={{
+        y: {
+          duration: 4,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut"
+        }
+      }}
     >
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="flex items-center justify-center gap-2 bg-primary-green text-white p-4 h-14 w-14 rounded-full shadow-lg"
+        className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#1F7A5A] to-[#14523C] text-white p-4 h-14 w-14 rounded-full shadow-xl hover:shadow-emerald-950/20 transition-all border border-emerald-500/10 cursor-pointer"
       >
         <Plus className="w-6 h-6" />
       </motion.button>
