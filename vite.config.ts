@@ -10,12 +10,24 @@ export default defineConfig(() => {
     const pkgPath = path.resolve(__dirname, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
     if (pkg.homepage) {
-      if (pkg.homepage.startsWith('http://') || pkg.homepage.startsWith('https://')) {
+      const isAiStudioUrl = pkg.homepage.includes('run.app');
+      
+      // If building in GitHub Actions or if the homepage points to the default AI Studio run.app preview url,
+      // fail-safe to a relative path './' so it works out-of-the-box on GitHub Pages.
+      if (isAiStudioUrl && (process.env.GITHUB_ACTIONS === 'true' || process.env.NODE_ENV === 'production')) {
+        base = './';
+      } else if (pkg.homepage.startsWith('http://') || pkg.homepage.startsWith('https://')) {
         const url = new URL(pkg.homepage);
-        base = url.pathname;
+        // If it's a template preview and we're not inside the server dev container, use relative base
+        if (isAiStudioUrl && !process.env.PORT) {
+          base = './';
+        } else {
+          base = url.pathname;
+        }
       } else {
         base = pkg.homepage;
       }
+      
       if (!base.endsWith('/')) {
         base += '/';
       }
