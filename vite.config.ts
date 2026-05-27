@@ -9,17 +9,28 @@ export default defineConfig(() => {
   try {
     const pkgPath = path.resolve(__dirname, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-    if (pkg.homepage) {
-      const isAiStudioUrl = pkg.homepage.includes('run.app');
-      
-      // If building in GitHub Actions or if the homepage points to the default AI Studio run.app preview url,
-      // fail-safe to a relative path './' so it works out-of-the-box on GitHub Pages.
-      if (isAiStudioUrl && (process.env.GITHUB_ACTIONS === 'true' || process.env.NODE_ENV === 'production')) {
-        base = './';
-      } else if (pkg.homepage.startsWith('http://') || pkg.homepage.startsWith('https://')) {
+    
+    // Check if we are building or running in the Google AI Studio environment
+    const isAiStudio = process.env.DISABLE_HMR === 'true' || process.env.PORT === '3000';
+    
+    // Check if we are running in GitHub Actions (deploy workflow)
+    const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+
+    if (isAiStudio) {
+      // In Google AI Studio dev/preview environment, standard relative base path works best
+      base = './';
+    } else if (isGitHubActions && process.env.GITHUB_REPOSITORY) {
+      // If built automatically by GitHub Actions, extract the repo name for GitHub Pages subdirectory
+      const repoName = process.env.GITHUB_REPOSITORY.split('/')[1];
+      if (repoName) {
+        base = `/${repoName}/`;
+      }
+    } else if (pkg.homepage) {
+      // If built manually/externally, resolve path from homepage field in package.json
+      if (pkg.homepage.startsWith('http://') || pkg.homepage.startsWith('https://')) {
         const url = new URL(pkg.homepage);
-        // If it's a template preview and we're not inside the server dev container, use relative base
-        if (isAiStudioUrl && !process.env.PORT) {
+        // If it still points to a template run.app domain but we're building outside AI Studio, fallback to relative
+        if (pkg.homepage.includes('run.app')) {
           base = './';
         } else {
           base = url.pathname;
